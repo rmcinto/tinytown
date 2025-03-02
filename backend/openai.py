@@ -1,8 +1,11 @@
 import openai
 import os
+from dotenv import load_dotenv
+
+load_dotenv()  # take environment variables from .env.
 
 # Set your OpenAI API key here
-OPENAI_API_KEY = "your-api-key"
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 def chat_with_gpt(prompt, model="gpt-4o"):
     """
