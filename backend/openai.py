@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 
 # Load the custom env file
 load_dotenv("backend/variables.env")
-print(f'API Key: {os.getenv("OPENAI_API_KEY")}/n')
+print(f'\nAPI Key: {os.getenv("OPENAI_API_KEY")}\n')
 
 # Set your OpenAI API key here
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
