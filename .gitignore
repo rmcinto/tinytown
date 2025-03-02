@@ -1,0 +1,67 @@
+# Ignore environment directories
+__env/
+env/
+.env/
+venv/
+.venv/
+
+# Ignore compiled Python files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore IDE/editor configuration
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Ignore logs and debug files
+logs/
+*.log
+nohup.out
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore Python dependencies
+Pipfile
+Pipfile.lock
+poetry.lock
+
+# Ignore package managers
+node_modules/
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Ignore build artifacts
+dist/
+build/
+*.egg-info/
+__pypackages__/
+
+# Ignore TypeScript build files
+*.tsbuildinfo
+
+# Ignore TypeScript output directories
+out/
+lib/
+
+# Ignore temporary and test files
+*.swp
+*.swo
+*.bak
+*.tmp
+*.test.js
+*.test.ts
+*.test.tsx
+
+# Ignore data directories (your custom addition)
+data/
+archive/
