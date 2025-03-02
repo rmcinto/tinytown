@@ -6,7 +6,7 @@ venv/
 .venv/
 
 # Ingoe environment variables files
-variables.env
+*.env
 
 # Ignore compiled Python files
 __pycache__/
