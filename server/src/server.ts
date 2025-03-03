@@ -22,10 +22,11 @@ app.use(express.json());
  * @param {string} type - The request type ("http" or "ws").
  * @param {string} route - The API route (e.g., "chat", "summary").
  * @param {string} message - The user's message.
- * @param {(error: Error | null, response?: string) => void} callback - Callback function for response handling.
+ * @param {(error: Error | null, response: string | null) => void} callback - Callback function for response handling.
  */
 const handleMessage = async (
-    type: 'http' | 'ws',    route: string,
+    type: 'http' | 'ws',
+    route: string,
     message: string,
     callback: (error: Error | null, response: string | null) => void
 ) => {
@@ -56,14 +57,14 @@ const handleMessage = async (
 // --- Catch-All HTTP Route ---
 app.post('/:route', async (req: Request, res: Response): Promise<void> => {
     const { route } = req.params;
-    const { message } = req.body;
+    const payload = req.body;
 
-    if (!message) {
-        res.status(400).json({ error: 'Message is required' });
+    if (!payload) {
+        res.status(400).json({ error: 'Payload is required' });
         return;
     }
 
-    handleMessage('http', route, message, (err, response) => {
+    handleMessage('http', route, payload, (err, response) => {
         if (err) {
             res.status(500).json({ error: err.message });
             return;
@@ -79,19 +80,19 @@ wss.on('connection', (ws: WebSocket) => {
     ws.on('message', async (data: string) => {
         try {
             const parsedData = JSON.parse(data);
-            const { route, message } = parsedData;
+            const { route, payload } = parsedData;
 
-            if (!route || !message) {
+            if (!route || !payload) {
                 return ws.send(JSON.stringify({ error: 'Route and message are required' }));
             }
 
-            handleMessage('ws', route, message, (err, response) => {
+            handleMessage('ws', route, payload, (err, response) => {
                 if (err) return ws.send(JSON.stringify({ error: err.message }));
                 ws.send(JSON.stringify({ response }));
             });
         } 
         catch (error) {
-            ws.send(JSON.stringify({ error: 'Invalid message format. Use JSON: { "route": "chat", "message": "Hello" }' }));
+            ws.send(JSON.stringify({ error: 'Invalid message format. Use JSON: { "route": "chat", "payload": "Hello" }' }));
         }
     });
 
