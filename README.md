@@ -58,6 +58,23 @@ If you get an execution policy error, run this **once** in PowerShell:
 Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
+#### 🔹 **Script Execution from Any Directory**
+The `bin/start.sh` and `bin/start.ps1` scripts are designed to be executed from **any directory**.
+- Running from the **project root**:
+  ```sh
+  bin/start.sh
+  ```
+  ```powershell
+  bin\start.ps1
+  ```
+- Running from inside `bin/`:
+  ```sh
+  ./start.sh
+  ```
+  ```powershell
+  .\start.ps1
+  ```
+
 #### 🔹 **Environment Variables**
 Ensure your **`.env`** file is properly configured with:
 ```

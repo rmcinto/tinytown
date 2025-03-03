@@ -1,8 +1,9 @@
 #!/bin/bash
 
 # Navigate to the project root (assuming bin/ is inside the project folder)
-cd "$(dirname "$0")/.."
-
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$PROJECT_ROOT/server"
 # Set mode (default to "debug" if no argument is provided)
 MODE=${1:-debug}
 
