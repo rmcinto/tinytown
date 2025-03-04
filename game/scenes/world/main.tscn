@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3 uid="uid://nbiddn14v7rm"]
+
+[ext_resource type="PackedScene" uid="uid://burdawm3xobir" path="res://scenes/components/chat_component.tscn" id="1_0wkb6"]
+[ext_resource type="PackedScene" uid="uid://cd7i8oplcrpxk" path="res://scenes/components/websocket_component.tscn" id="2_mli2r"]
+
+[node name="Main" type="Node2D"]
+
+[node name="ChatComponent" parent="." instance=ExtResource("1_0wkb6")]
+
+[node name="WebsocketComponent" parent="." node_paths=PackedStringArray("chat_component") instance=ExtResource("2_mli2r")]
+chat_component = NodePath("../ChatComponent")
