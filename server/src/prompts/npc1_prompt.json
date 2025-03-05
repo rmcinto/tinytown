@@ -94,7 +94,7 @@
             { "type": "building", "name": "Workshop", "position": [10, 15] },
             { "type": "building", "name": "Marketplace", "position": [20, 15] },
             { "type": "building", "name": "Inventor's Lab", "position": [20, 5] },
-            { "type": "gold coin", "artifactId": "artifact5", "position": [12, 22] },
+            { "type": "gold coin", "artifactId": "artifact5", "position": [12, 20] },
             { "type": "gold coin", "artifactId": "artifact5", "position": [2, 20] },
             { "type": "gold coin", "artifactId": "artifact5", "position": [10, 10] },
             { "type": "gold coin", "artifactId": "artifact5", "position": [5, 13] }
@@ -128,7 +128,10 @@
             "He continues to seek out missing parts like steam valves and cogwheels while deepening his interactions with fellow inventors and traders in Gearspring."
         ],
         "context": [
-            
+            {
+                "npcId": "npc1",
+                
+            }
         ]
     }
 }
