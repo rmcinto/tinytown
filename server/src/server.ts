@@ -3,13 +3,19 @@ dotenv.config({ override: true });
 
 import express, { Request, Response } from 'express';
 import cors from 'cors';
-import http from 'http';
+import https from 'https';
 import WebSocket, { WebSocketServer } from 'ws';
 import path from 'path';
 import fs from 'fs';
 
+// Read SSL certificate and key files
+const options = {
+    key: fs.readFileSync('./server.key'),
+    cert: fs.readFileSync('./server.cert')
+  };
+
 const app = express();
-const server = http.createServer(app);
+const server = https.createServer(options, app);
 const wss = new WebSocketServer({ server });
 
 const PORT = process.env.PORT || 3000;
@@ -32,6 +38,11 @@ const handleMessage = async (
 ) => {
     try {
         console.log(`[${type.toUpperCase()}] Route: /${route} | Message:`, message);
+
+        //we don't want a directory traversal (or path traversal) vulnerability 
+        if (route[0] === ".") {
+            throw new Error(`Invalid route '${route}'.`);
+        }
 
         const servicePath = path.join(__dirname, 'services', `${route}.ts`);
 
