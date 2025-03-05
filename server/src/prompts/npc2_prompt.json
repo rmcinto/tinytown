@@ -34,7 +34,7 @@
             "parameters": {
                 "artifact": {
                     "artifactId": "artifact1",
-                    "type": "gold_coin", 
+                    "name": "gold coin", 
                     "position": [5, 13] 
                 }
             },
@@ -46,7 +46,7 @@
             "parameters": {
                 "artifact": {
                     "artifactId": "artifact",
-                    "type": "gold_coin", 
+                    "name": "gold coin", 
                     "position": [5, 13] 
                 },
                 "toNPCId": "npc3"
