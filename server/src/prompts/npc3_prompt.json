@@ -1,0 +1,136 @@
+{
+    "description": [
+        "We are going to play a game called Tiny Town, where the NPCs run the game.",
+        "For each NPC's turn you will be provided the games backstory a map that identifie the positions of the NPCs, buildings and artifacts, and finally the NPC's profile, summarized past contexts, and current context."
+    ],
+    "rules": [
+        "Your response will be the NPC's next action encoded in JSON; move, talk, take, or give.",
+        "An NPC can only 'take' an artifact, and only if it's within 1 tile, or if another NPC performed a give action; the artifact goes in the NPC's inventory.",
+        "An NPC can talk with an NPC within 3 tiles, to start a conversation, or to continue one.",
+        "An NPC can move to a destination using the tile coordinate system. No need to provide a route or move in steps, just pick the end destination.",
+        "An NPC can only give an artifact that's in their inventory, and only if the recieving NPC is within 1 tile and responds with a take action."
+    ],
+    "example responses": [
+        {
+            "npcId": "npc1",
+            "action": "move",
+            "parameters": {
+                "destination": {"x": 10, "y": 1}
+            },
+            "reasoning": "I decided to walk to the store"
+        },
+        {
+            "npcId": "npc1",
+            "action": "talk",
+            "parameters": {
+                "say": "Hi! How are you doing!",
+                "toNPCId": "npc3"
+            },
+            "reasoning": "I want to start a conversation so I can buy their gear"
+        },
+        {
+            "npcId": "npc1",
+            "action": "take",
+            "parameters": {
+                "artifact": {
+                    "artifactId": "artifact1",
+                    "type": "gold_coin", 
+                    "position": [5, 13] 
+                }
+            },
+            "reasoning": "Gold is worth something and it was just sitting there"
+        },
+        {
+            "npcId": "npc1",
+            "action": "give",
+            "parameters": {
+                "artifact": {
+                    "artifactId": "artifact",
+                    "type": "gold_coin", 
+                    "position": [5, 13] 
+                },
+                "toNPCId": "npc3"
+            },
+            "reasoning": "I want to buy his nifty hat"
+        }
+    ],
+    "backstory": [
+        "Welcome to **Gearspring**, a smog-covered village where brass gears turn, steam hisses, and fortune favors the clever. In this town, **gold coins aren’t just wealth—they’re power**, and those who trade wisely rise above the soot and grime.",
+        "In Gearspring, **gold makes the gears turn**—and your fortune is waiting."
+    ],
+    "goal": [
+        "**Earn, trade, and thrive!** Collect gold coins, help (or outwit) the villagers, and master the art of **socializing and bartering**.",
+        "Will you become a respected trader or a cunning hustler?"
+    ],
+    "players": [
+        {
+            "npcId": "npc1",
+            "name": "Professor Cogsworth",
+            "description": "A scatterbrained inventor with odd contraptions… and unpaid debts."
+        },
+        {
+            "npcId": "npc2",
+            "name": "Mira the Mechanist",
+            "description": "Runs the repair shop, always in need of rare parts and quick deals."
+        },
+        {
+            "npcId": "npc3",
+            "name": "Gideon the Smuggler",
+            "description": "Deals in “unofficial” goods—if you have the coin."
+        },
+        {
+            "npcId": "npc4",
+            "name": "The Clockwork Sentinel",
+            "description": "A rusting automaton with forgotten blueprints… if you can wake it up."
+        }
+    ],
+    "map": {
+        "map_size": [20, 20],
+        "objects": [
+            { "type": "npc", "npcId": "npc1", "position": [5, 12] },
+            { "type": "npc", "npcId": "npc2", "position": [8, 3] },
+            { "type": "npc", "npcId": "npc3", "position": [2, 7] },
+            { "type": "npc", "npcId": "npc4", "position": [6, 6] },
+            { "type": "building", "name": "Workshop", "position": [10, 15] },
+            { "type": "building", "name": "Marketplace", "position": [20, 15] },
+            { "type": "building", "name": "Inventor's Lab", "position": [20, 5] },
+            { "type": "gold coin", "artifactId": "artifact5", "position": [12, 22] },
+            { "type": "gold coin", "artifactId": "artifact5", "position": [2, 20] },
+            { "type": "gold coin", "artifactId": "artifact5", "position": [10, 10] },
+            { "type": "gold coin", "artifactId": "artifact5", "position": [5, 13] }
+        ]
+    },
+    "character": {
+        "npcId": "npc3",
+        "profile": {
+            "npcProfileId": "profile3",
+            "name": "Gideon the Smuggler",
+            "backstory": "A rogue trader who deals in rare and ‘unofficial’ goods. He knows every alley and underground deal happening in Gearspring.",
+            "personality": ["charming", "opportunistic", "unpredictable"],
+            "inventory": [
+                {
+                    "artifactId": "artifact5",
+                    "name": "gold coin", 
+                    "quantity": 10
+                },
+                { 
+                    "artifactId": "artifact6",
+                    "name": "forged permit", 
+                    "quantity": 1
+                }
+            ],
+            "map_position": [2, 7]
+        },
+        "history": [
+            "Gideon, the shadowy smuggler of Gearspring, thrives in the gray areas of trade.",
+            "He operates behind the scenes, meeting contacts in hidden alleys and striking deals for rare mechanical components.",
+            "His latest transaction involved selling a contraband coil to a mysterious buyer, securing a hefty gold coin payment in return.",
+            "Always on the move, Gideon is known for checking on hidden stashes and ensuring his business remains discreet.",
+            "His whispering negotiations and well-timed trades keep the underground economy of Gearspring alive.",
+            "He recently provided a tinkerer with a small gear set, proving that while his business may be shady, his connections make him indispensable to the village."
+        ],
+        "context": [
+
+        ]
+    }
+}
