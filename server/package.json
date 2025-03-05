@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "ts-node src/server.ts",
+    "client": "ts-node tests/client_socket_example.ts",
     "build": "tsc",
     "start": "node dist/server.js"
   },

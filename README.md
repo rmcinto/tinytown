@@ -53,9 +53,9 @@ chmod +x bin/start.sh
 ```
 
 #### 🔹 **Allow PowerShell Script Execution (Windows)**
-If you get an execution policy error, run this **once** in PowerShell:
+If you get an execution policy error, run this in PowerShell before running the script:
 ```powershell
-Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+Set-ExecutionPolicy Bypass -Scope Process
 ```
 
 #### 🔹 **Script Execution from Any Directory**

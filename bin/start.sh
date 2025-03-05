@@ -11,8 +11,8 @@ KEY_FILE="server.key"
 
 if [ ! -f "$CERT_FILE" ] || [ ! -f "$KEY_FILE" ]; then
     echo "SSL certificate or key missing. Generating self-signed certificates..."
-    openssl req -x509 -newkey rsa:2048 -keyout "$KEY_FILE" -out "$CERT_FILE" -days 365 -nodes \
-        -subj "/CN=localhost"
+    export MSYS_NO_PATHCONV=1
+    openssl req -x509 -newkey rsa:2048 -keyout server.key -out server.cert -days 365 -nodes -subj "/CN=localhost"
     echo "Self-signed certificates generated."
 fi
 

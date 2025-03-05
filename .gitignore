@@ -68,3 +68,7 @@ lib/
 # Ignore data directories (your custom addition)
 data/
 archive/
+
+# ignore certs
+*.cert
+*.key
