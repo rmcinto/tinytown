@@ -8,16 +8,22 @@
         "An NPC can only 'take' an artifact, and only if it's within 1 tile, or if another NPC performed a give action; the artifact goes in the NPC's inventory.",
         "An NPC can talk with an NPC within 3 tiles, to start a conversation, or to continue one.",
         "An NPC can move to a destination using the tile coordinate system. No need to provide a route or move in steps, just pick the end destination.",
-        "An NPC can only give an artifact that's in their inventory, and only if the recieving NPC is within 1 tile and responds with a take action."
+        "An NPC can only give an artifact that's in their inventory, and only if the recieving NPC is within 1 tile and responds with a take action.",
+        "If a change is made that effects the map, include those changes in the action.",
+        "If there are changes that effect inventories, include those changes in the action."
     ],
-    "example responses": [
+    "exampleResponses": [
         {
             "npcId": "npc1",
             "action": "move",
             "parameters": {
-                "destination": {"x": 10, "y": 1}
+                "origin": [1, 1],
+                "destination": [10, 1]
             },
-            "reasoning": "I decided to walk to the store"
+            "reasoning": "I decided to walk to the store",
+            "mapUpdates": [
+                { "type": "npc", "npcId": "npc1", "position": [10, 1] }
+            ]
         },
         {
             "npcId": "npc1",
@@ -32,26 +38,71 @@
             "npcId": "npc1",
             "action": "take",
             "parameters": {
+                "fromNPCId": null,
                 "artifact": {
                     "artifactId": "artifact1",
-                    "name": "gold coin", 
-                    "position": [5, 13] 
+                    "name": "gold coin",
+                    "quantity": 1,
+                    "position": [5, 13]
                 }
             },
-            "reasoning": "Gold is worth something and it was just sitting there"
+            "reasoning": "Gold is worth something and it was just sitting there",
+            "mapUpdates": [
+                { "type": "gold coin", "artifactId": "artifact5", "position": [5, 13], "remove": true }
+            ],
+            "inventoryUpdates": {
+                "npc1": { "artifactId": "artifact3", "name": "blueprint fragment", "quantity": 2 }
+            }
         },
         {
             "npcId": "npc1",
             "action": "give",
             "parameters": {
+                "toNPCId": "npc3",
                 "artifact": {
-                    "artifactId": "artifact",
-                    "name": "gold coin", 
-                    "position": [5, 13] 
-                },
-                "toNPCId": "npc3"
+                    "artifactId": "artifact1",
+                    "name": "gold coin",
+                    "quantity": 1
+                }
             },
             "reasoning": "I want to buy his nifty hat"
+        },
+        {
+            "npcId": "npc3",
+            "action": "take",
+            "parameters": {
+                "fromNPCId": "npc1",
+                "artifact": {
+                    "artifactId": "artifact1",
+                    "name": "gold coin",
+                    "quantity": 1
+                }
+            },
+            "reasoning": "NPC1 wants to buy my hat",
+            "inventoryUpdates": {
+                "npc1": { "artifactId": "artifact1", "name": "gold coin", "quantity": 0 },
+                "npc3": { "artifactId": "artifact1", "name": "gold coin", "quantity": 6 }
+            }
+        },
+        {
+            "npcId": "npc4",
+            "action": "give",
+            "parameters": {
+                "toNPCId": null,
+                "artifact": {
+                    "artifactId": "artifact6",
+                    "name": "rusty gear",
+                    "quantity": 1,
+                    "position": [2, 4]
+                }
+            },
+            "reasoning": "I don't want this rusty gear anymore",
+            "mapUpdates": [
+                { "type": "rusty gear", "artifactId": "artifact6", "position": [2, 4] }
+            ],
+            "inventoryUpdates": {
+                "npc4": { "artifactId": "artifact6", "name": "rusty gear", "quantity": 0 }
+            }
         }
     ],
     "backstory": [
@@ -66,38 +117,86 @@
         {
             "npcId": "npc1",
             "name": "Professor Cogsworth",
-            "description": "A scatterbrained inventor with odd contraptions… and unpaid debts."
+            "description": "A scatterbrained inventor with odd contraptions… and unpaid debts.",
+            "inventory": [
+                {
+                    "artifactId": "artifact3",
+                    "name": "blueprint fragment",
+                    "quantity": 1
+                },
+                {
+                    "artifactId": "artifact4",
+                    "name": "cogwheel",
+                    "quantity": 3
+                }
+            ]
         },
         {
             "npcId": "npc2",
             "name": "Mira the Mechanist",
-            "description": "Runs the repair shop, always in need of rare parts and quick deals."
+            "description": "Runs the repair shop, always in need of rare parts and quick deals.",
+            "inventory": [
+                {
+                    "artifactId": "artifact1",
+                    "name": "wrench", 
+                    "quantity": 1 
+                },
+                { 
+                    "artifactId": "artifact2",
+                    "name": "steam valve", 
+                    "quantity": 2 
+                }
+            ]
         },
         {
             "npcId": "npc3",
             "name": "Gideon the Smuggler",
-            "description": "Deals in “unofficial” goods—if you have the coin."
+            "description": "Deals in “unofficial” goods—if you have the coin.",
+            "inventory": [
+                {
+                    "artifactId": "artifact5",
+                    "name": "gold coin", 
+                    "quantity": 10
+                },
+                { 
+                    "artifactId": "artifact6",
+                    "name": "forged permit", 
+                    "quantity": 1
+                }
+            ]
         },
         {
             "npcId": "npc4",
             "name": "The Clockwork Sentinel",
-            "description": "A rusting automaton with forgotten blueprints… if you can wake it up."
+            "description": "A rusting automaton with forgotten blueprints… if you can wake it up.",
+            "inventory": [
+                {
+                    "artifactId": "artifact7",
+                    "name": "rusted gear", 
+                    "quantity": 1
+                },
+                { 
+                    "artifactId": "artifact8",
+                    "name": "ancient code chip", 
+                    "quantity": 1
+                }
+            ]
         }
     ],
     "map": {
         "map_size": [20, 20],
         "objects": [
             { "type": "npc", "npcId": "npc1", "position": [5, 12] },
-            { "type": "npc", "npcId": "npc2", "position": [8, 3] },
+            { "type": "npc", "npcId": "npc2", "position": [2, 6] },
             { "type": "npc", "npcId": "npc3", "position": [2, 7] },
             { "type": "npc", "npcId": "npc4", "position": [6, 6] },
             { "type": "building", "name": "Workshop", "position": [10, 15] },
             { "type": "building", "name": "Marketplace", "position": [20, 15] },
             { "type": "building", "name": "Inventor's Lab", "position": [20, 5] },
-            { "type": "gold coin", "artifactId": "artifact5", "position": [12, 20] },
-            { "type": "gold coin", "artifactId": "artifact5", "position": [2, 20] },
-            { "type": "gold coin", "artifactId": "artifact5", "position": [10, 10] },
-            { "type": "gold coin", "artifactId": "artifact5", "position": [5, 13] }
+            { "type": "artifact", "artifactId": "artifact5", "name": "gold coin", "position": [12, 20] },
+            { "type": "artifact", "artifactId": "artifact5", "name": "gold coin", "position": [2, 20] },
+            { "type": "artifact", "artifactId": "artifact5", "name": "gold coin", "position": [10, 10] },
+            { "type": "artifact", "artifactId": "artifact5", "name": "gold coin", "position": [5, 13] }
         ]
     },
     "character": {
@@ -127,7 +226,8 @@
             "At the marketplace, she traded a reinforced piston for brass bolts, which she later gifted to another tinkerer in need.",
             "She keeps a watchful eye on the town’s mechanisms, warning those who tamper with delicate parts.",
             "A recent acquisition of an advanced boiler blueprint hints at her ambition to improve the town’s infrastructure.",
-            "Her network of trades and repairs makes her a key figure in keeping Gearspring running smoothly."
+            "Her network of trades and repairs makes her a key figure in keeping Gearspring running smoothly.",
+            "She desperately needs a permit for a new project."
         ],
         "context": [
 
