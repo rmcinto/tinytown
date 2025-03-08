@@ -9,6 +9,7 @@ export interface MapObject {
     mapItemId: string;
     type: MapObjectType;
     name: string;
+    symbol: string;
     position: [number, number];
 }
 

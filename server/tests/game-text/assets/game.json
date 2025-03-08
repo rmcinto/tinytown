@@ -38,7 +38,9 @@
         "If a change is made that effects the map, include those changes in the action.",
         "If there are changes that effect inventories, include those changes in the action.",
         "NPCs only know what's in their inventory unless the artifact is marked visible: true.",
-        "An NPC can make things with artifacts in their inventory, using up the artifacts and creating a new one, which will modify the NPCs inventory, but it must happen in the workshop."
+        "An NPC can make things with artifacts in their inventory, using up the artifacts and creating a new one, which will modify the NPCs inventory, but it must happen in the workshop.",
+        "Include map updates when new buildings are discovered; include a single character 'symbol' that is appropriate for the type of building.",
+        "Include map updates when new artifacts are discovered, it must be added to the map before the NPC can 'take' it; include a single character 'symbol' that is appropriate for the type of building."
     ],
     "exampleActionResponses": [
         [
@@ -286,6 +288,7 @@
                 "mapItemId": "mapItem1",
                 "type": "npc",
                 "npcId": "npc1",
+                "symbol": "1",
                 "position": [
                     5,
                     12
@@ -295,6 +298,7 @@
                 "mapItemId": "mapItem2",
                 "type": "npc",
                 "npcId": "npc2",
+                "symbol": "2",
                 "position": [
                     2,
                     6
@@ -304,6 +308,7 @@
                 "mapItemId": "mapItem3",
                 "type": "npc",
                 "npcId": "npc3",
+                "symbol": "3",
                 "position": [
                     2,
                     7
@@ -313,6 +318,7 @@
                 "mapItemId": "mapItem4",
                 "type": "npc",
                 "npcId": "npc4",
+                "symbol": "4",
                 "position": [
                     6,
                     6
@@ -322,6 +328,7 @@
                 "mapItemId": "mapItem5",
                 "type": "building",
                 "name": "Workshop",
+                "symbol": "W",
                 "position": [
                     10,
                     15
@@ -331,6 +338,7 @@
                 "mapItemId": "mapItem6",
                 "type": "building",
                 "name": "Marketplace",
+                "symbol": "M",
                 "position": [
                     20,
                     15
@@ -340,6 +348,7 @@
                 "mapItemId": "mapItem7",
                 "type": "building",
                 "name": "Inventor's Lab",
+                "symbol": "L",
                 "position": [
                     20,
                     5
@@ -350,6 +359,7 @@
                 "type": "artifact",
                 "artifactId": "artifact5",
                 "name": "gold coin",
+                "symbol": "G",
                 "position": [
                     12,
                     20
@@ -360,6 +370,7 @@
                 "type": "artifact",
                 "artifactId": "artifact5",
                 "name": "gold coin",
+                "symbol": "G",
                 "position": [
                     2,
                     20
@@ -370,6 +381,7 @@
                 "type": "artifact",
                 "artifactId": "artifact5",
                 "name": "gold coin",
+                "symbol": "G",
                 "position": [
                     10,
                     10
@@ -380,6 +392,7 @@
                 "type": "artifact",
                 "artifactId": "artifact5",
                 "name": "gold coin",
+                "symbol": "G",
                 "position": [
                     5,
                     13

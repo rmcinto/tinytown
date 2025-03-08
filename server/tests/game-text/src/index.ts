@@ -8,7 +8,7 @@ import npc2 from '../assets/npc2.json';
 import npc3 from '../assets/npc3.json';
 import npc4 from '../assets/npc4.json';
 import { GameSession, NPCPrompt } from "../../../src/entities/Game";
-import { MapObject, NPCMapObject } from '../../../src/entities/Map';
+import { BuildingMapObject, MapObject, NPCMapObject } from '../../../src/entities/Map';
 import { Action, GiveParameters, MakeParameters, MoveParameters, TakeParameters, TalkParameters } from '../../../src/entities/Action';
 import { v4 as uuidV4 } from "uuid";
 
@@ -220,23 +220,7 @@ function renderMap(gameSession: GameSession, npcs: CharacterDict) {
     // Place objects on the grid.
     Object.values(mapData.objects).forEach((obj: MapObject) => {
         const [x, y] = obj.position; // positions are 1-indexed
-        let symbol = '?';
-
-        if (obj.type === "npc") {
-            const npc = obj as NPCMapObject;
-            if (npc.npcId === "npc1") symbol = "1";
-            else if (npc.npcId === "npc2") symbol = "2";
-            else if (npc.npcId === "npc3") symbol = "3";
-            else if (npc.npcId === "npc4") symbol = "4";
-        }
-        else if (obj.type === "building") {
-            if (obj.name === "Workshop") symbol = "W";
-            else if (obj.name === "Marketplace") symbol = "M";
-            else if (obj.name === "Inventor's Lab") symbol = "L";
-        }
-        else if (obj.type === "artifact") {
-            if (obj.name === "gold coin") symbol = "G";
-        }
+        let symbol = obj.symbol || '?';
         // Adjust for zero-indexing.
         grid[y - 1][x - 1] = symbol;
     });
