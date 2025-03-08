@@ -91,10 +91,13 @@ async function gameLoop(gameSession: GameSession, npcs: CharacterDict, conn: Con
     // Play each NPC
     try {
         for (let npc of Object.values(npcs)) {
-            await playNPC(conn, {
+            const npcPrompt = {
                 ...gameSession,
                 character: npc
-            } as unknown as NPCPrompt);
+            };
+            //@ts-ignore
+            delete npcPrompt.history;
+            await playNPC(conn, npcPrompt);
         }
     }
     catch (ex) {

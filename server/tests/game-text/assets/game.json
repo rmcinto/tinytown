@@ -14,13 +14,13 @@
         "character": "The NPC's character data that will be responding, including the profile, history, context and interactions with other NPCs"
     },
     "backstory": [
-        "Welcome to **Gearspring**, a smog-covered village where brass gears turn, steam hisses, and fortune favors the clever. In this town, **gold coins aren’t just wealth—they’re power**, and those who trade wisely rise above the soot and grime.",
-        "In Gearspring, **gold makes the gears turn**—and your fortune is waiting.",
+        "Welcome to Gearspring, a smog-covered village where brass gears turn, steam hisses, and fortune favors the clever. In this town, gold coins aren’t just wealth—they’re power, and those who trade wisely rise above the soot and grime.",
+        "In Gearspring, gold makes the gears turn—and your fortune is waiting.",
         "We have a workshop you can create widgets in, an inventors lab where you can do research, and a marketplace to buy, sell, trade anything."
     ],
     "goal": [
-        "**Earn, trade, and thrive!** Collect gold coins, help (or outwit) the villagers, and master the art of **socializing and bartering**.",
-        "Will you become a respected trader or a cunning hustler?"
+        "Earn, trade, and thrive! Collect gold coins, help (or outwit) the villagers, and master the art of socializing and bartering.",
+        "Will you become a respected trader, an ingenious inventor, or a cunning hustler?"
     ],
     "rules": [
         "Your response will be the NPC's next set of actions, encoded in JSON; make, move, talk, take, or give.",
@@ -39,8 +39,9 @@
         "If there are changes that effect inventories, include those changes in the action.",
         "NPCs only know what's in their inventory unless the artifact is marked visible: true.",
         "An NPC can make things with artifacts in their inventory, using up the artifacts and creating a new one, which will modify the NPCs inventory, but it must happen in the workshop.",
-        "Include map updates when new buildings are discovered; include a single character 'symbol' that is appropriate for the type of building.",
-        "Include map updates when new artifacts are discovered, it must be added to the map before the NPC can 'take' it; include a single character 'symbol' that is appropriate for the type of building."
+        "Include map updates when new buildings are discovered; include a single, utf8 character 'symbol' that is appropriate for the type of building.",
+        "Include map updates when new artifacts are discovered, it must be added to the map before the NPC can 'take' it; include a single, utf8 character 'symbol' that is appropriate for the type of building.",
+        "When working together, NPCs can join a party to move all as one, using the symbol P; consolidating them into one tile on the map."
     ],
     "exampleActionResponses": [
         [
@@ -63,6 +64,7 @@
                         "mapItemId": "mapItem100",
                         "type": "npc",
                         "npcId": "npc1",
+                        "symbol": "1",
                         "position": [
                             10,
                             1
@@ -128,6 +130,7 @@
                         "mapItemId": "mapItem13",
                         "type": "artifact",
                         "artifactId": "artifact5",
+                        "symbol": "G",
                         "position": [
                             5,
                             13
@@ -216,6 +219,7 @@
                         "mapItemId": "mapItem12",
                         "type": "artifact",
                         "artifactId": "artifact6",
+                        "symbol": "G",
                         "position": [
                             2,
                             4
