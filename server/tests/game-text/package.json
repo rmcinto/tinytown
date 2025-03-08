@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "entities": "file:../entities",
+    "uuid": "^11.1.0",
     "ws": "^8.18.1"
   },
   "devDependencies": {

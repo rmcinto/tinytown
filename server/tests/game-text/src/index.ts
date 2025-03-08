@@ -1,19 +1,21 @@
 import WebSocket from 'ws';
 import fs from 'fs';
 import * as readline from 'readline';
-import { CharacterDict } from '../../../entities/Character';
+import { CharacterDict } from '../../../src/entities/Character';
 import game from '../assets/game.json';
 import npc1 from '../assets/npc1.json';
 import npc2 from '../assets/npc2.json';
 import npc3 from '../assets/npc3.json';
 import npc4 from '../assets/npc4.json';
-import { GameSession, NPCPrompt } from "../../../entities/Game";
-import { MapObject, NPCMapObject } from '../../../entities/Map';
-import { Action, GiveParameters, MakeParameters, MoveParameters, TakeParameters, TalkParameters } from '../../../entities/Action';
+import { GameSession, NPCPrompt } from "../../../src/entities/Game";
+import { MapObject, NPCMapObject } from '../../../src/entities/Map';
+import { Action, GiveParameters, MakeParameters, MoveParameters, TakeParameters, TalkParameters } from '../../../src/entities/Action';
+import { v4 as uuidV4 } from "uuid";
 
+const gameId = uuidV4();
 const GAME_LOOP_WAIT_MS = 1000;
-const LOG_FILE = `websocket-${performance.now()}.log.json`;
-const GAME_FILE = "game-";
+const LOG_FILE = `${gameId}-websocket.log.json`;
+const GAME_FILE = `${gameId}-game`;
 
 // Define an interface for log entries
 interface LogEntry {
@@ -91,7 +93,7 @@ async function gameLoop(gameSession: GameSession, npcs: CharacterDict, conn: Con
         for (let npc of Object.values(npcs)) {
             await playNPC(conn, {
                 ...gameSession,
-                ...npc
+                character: npc
             } as unknown as NPCPrompt);
         }
     }
@@ -106,7 +108,7 @@ async function gameLoop(gameSession: GameSession, npcs: CharacterDict, conn: Con
     }
     else {
         console.log("Closing connection and exiting game loop.");
-        fs.writeFileSync(`logs/${GAME_FILE}${performance.now()}.log.json`, JSON.stringify(gameSession, null, 4));
+        fs.writeFileSync(`logs/${GAME_FILE}.log.json`, JSON.stringify(gameSession, null, 4));
         conn.close();
     }
 }
