@@ -174,18 +174,18 @@ async function connectToServer(gameSession: GameSession, npcs: CharacterDict): P
             ws.on('message', (data) => {
                 // Convert the Buffer to a string if necessary.
                 const text = data instanceof Buffer ? data.toString('utf8') : data;
-
                 const response = JSON.parse(text as string);
-                if (response.error) {
-                    reject(response.error);
+
+                if (!response.actions) {
+                    reject(response);
                     return;
                 }
 
-                let actions = JSON.parse(response.response) as Action[];
+                let actions = response.actions as Action[];
 
                 // Add the response to the current log entry and write out the full log.
                 if (currentLogEntry) {
-                    currentLogEntry.response = actions;
+                    currentLogEntry.response = response;
                     logEntries.push(currentLogEntry);
                     currentLogEntry = null;
                     writeLogFile();

@@ -1,8 +1,10 @@
+import { AnyAaaaRecord } from 'dns';
 import { OpenAI } from 'openai';
 
+const MODEL_NAME = 'o3-mini';
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-export const handleRequest = async (message: string): Promise<string | null> => {
+export const handleRequest = async (message: string): Promise<any | null> => {
     console.log("Start chat")
     let content = message;
 
@@ -10,21 +12,24 @@ export const handleRequest = async (message: string): Promise<string | null> => 
 
     try {
         const response = await openai.chat.completions.create({
-            model: 'o3-mini',
+            model: MODEL_NAME,
             messages: [{ role: 'user', content }],
         });
     
         actionText = response.choices[0].message.content as string;
     }
-    catch(error) {
+    catch(error: any) {
         console.log("Error Getting Chat")
-        return JSON.stringify(error);;
+        return {
+            message: error.message || error,
+            stack: error.stack
+        };
     }
 
-    let action;
+    let actions;
     try {
         actionText.replace(/(?:^[`]{3}json\r?\n?)|(?:\r?\n?[`]{3}$)/g, "");
-        action = JSON.parse(actionText);
+        actions = JSON.parse(actionText);
     }
     catch(error) {
         console.log("Invalid JSON");
@@ -34,7 +39,7 @@ export const handleRequest = async (message: string): Promise<string | null> => 
     try {
         content = `(user: ${content}\nsystem: ${actionText})\n\n Why did you choose this response?`;
         const response = await openai.chat.completions.create({
-            model: 'o3-mini',
+            model: MODEL_NAME,
             messages: [{ role: 'user', content }],
         });
         internalReasoning = response.choices[0].message.content;
@@ -43,15 +48,17 @@ export const handleRequest = async (message: string): Promise<string | null> => 
         console.log("Error Getting Reasoning")
     }
     
-    if (action) {
-        action.internalReasoning;
-        return JSON.stringify(action);
+    if (actions) {
+        return {
+            actions,
+            internalReasoning
+        };
     }
     else {
-        return JSON.stringify({
-            error: "The chat returned invalid JSON",
-            text: actionText,
+        return {
+            message: "The chat returned invalid JSON",
+            chat: actionText,
             internalReasoning
-        });
+        };
     }
 };

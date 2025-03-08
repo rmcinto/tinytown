@@ -12,7 +12,7 @@ import fs from 'fs';
 const options = {
     key: fs.readFileSync('./server.key'),
     cert: fs.readFileSync('./server.cert')
-  };
+};
 
 const app = express();
 const server = https.createServer(options, app);
@@ -28,13 +28,13 @@ app.use(express.json());
  * @param {string} type - The request type ("http" or "ws").
  * @param {string} route - The API route (e.g., "chat", "summary").
  * @param {string} message - The user's message.
- * @param {(error: Error | null, response: string | null) => void} callback - Callback function for response handling.
+ * @param {(eresponse: any) => void} callback - Callback function for response handling.
  */
 const handleMessage = async (
     type: 'http' | 'ws',
     route: string,
     message: any,
-    callback: (error: Error | null, response: string | null) => void
+    callback: (response: any) => void
 ) => {
     try {
         console.log(`[${type.toUpperCase()}] Route: /${route}`);
@@ -62,31 +62,25 @@ const handleMessage = async (
 
         const response = await service.handleRequest(message);
 
-        callback(null, response);
-    } 
-    catch (error) {
+        callback(response);
+    }
+    catch (error: any) {
         console.error(`[${type.toUpperCase()}] Error:`, error);
-        callback(error as Error, null);
+        callback({
+            message: error.message || error,
+            stack: error.stack
+        });
     }
 };
 
 // --- Catch-All HTTP Route ---
 app.post('/:route', async (req: Request, res: Response): Promise<void> => {
-    const { route } = req.params;
-    const payload = req.body;
-
-    if (!payload) {
-        res.status(400).json({ error: 'Payload is required' });
-        return;
-    }
-
-    handleMessage('http', route, payload, (err, response) => {
-        if (err) {
-            res.status(500).json({ error: err.message });
-            return;
-        }
-        res.json({ response });
-    });
+    handleMessage(
+        'http', 
+        req.params.route, 
+        req.body, 
+        (response) => res.json(response)
+    );
 });
 
 // --- WebSocket Server ---
@@ -94,25 +88,24 @@ wss.on('connection', (ws: WebSocket) => {
     console.log('WebSocket client connected');
 
     ws.on('message', async (data: any) => {
+        console.log('Messasge recieved');
+        const text = data instanceof Buffer ? data.toString('utf8') : data;
+        let parsedData;
         try {
-            console.log('Messasge recieved');
-            const text = data instanceof Buffer ? data.toString('utf8') : data;
-            const parsedData = JSON.parse(text);
-            const { route, payload } = parsedData;
-            if (!route || !payload) {
-                return ws.send(JSON.stringify({ error: 'Route and message are required' }));
-            }
-            handleMessage('ws', route, payload, (err, response) => {
-                if (err) return ws.send(JSON.stringify({ error: err.message }));
-                ws.send(JSON.stringify({ response }));
-            });
-        } 
+            parsedData = JSON.parse(text);
+        }
         catch (error) {
-            ws.send(JSON.stringify({ error: 'Invalid message format. Use JSON: { "route": "chat", "payload": "Hello" }' }));
+            ws.send(JSON.stringify({ message: error }));
         }
-        finally {
-            console.log('Messasge processed');
-        }
+
+        handleMessage(
+            'ws', 
+            parsedData.route, 
+            parsedData.payload, 
+            (response) => ws.send(JSON.stringify(response))
+        );
+
+        console.log('Messasge processed');
     });
 
     ws.on('close', () => console.log('WebSocket client disconnected'));
