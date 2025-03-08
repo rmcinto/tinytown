@@ -1,18 +1,18 @@
 {
-  "name": "backend",
+  "name": "server",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
-  "scripts": {
-    "dev": "ts-node src/server.ts",
-    "client": "ts-node tests/client_socket_example.ts",
-    "build": "tsc",
-    "start": "node dist/server.js"
-  },
-  "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "dev": "ts-node src/server.ts",
+    "client": "ts-node tests/client_socket_example.ts",
+    "text-map": "ts-node tests/map_to_text.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",

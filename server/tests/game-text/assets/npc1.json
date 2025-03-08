@@ -1,0 +1,40 @@
+{
+    "npcId": "npc1",
+    "profile": {
+        "npcProfileId": "profile1",
+        "name": "Professor Cogsworth",
+        "description": "A scatterbrained inventor with odd contraptions… and unpaid debts.",
+        "backstory": "An eccentric inventor who once built half the town's steam engines but lost himself in his blueprints. His workshop is filled with half-finished contraptions and unpaid debts.",
+        "personality": [
+            "scatterbrained",
+            "brilliant",
+            "forgets names"
+        ]
+    },
+    "inventory": {
+        "artifact3": {
+            "artifactId": "artifact3",
+            "name": "blueprint fragment",
+            "quantity": 1
+        },
+        "artifact4": {
+            "artifactId": "artifact4",
+            "name": "cogwheel",
+            "quantity": 3
+        },
+        "artifact5": {
+            "artifactId": "artifact5",
+            "name": "gold coin",
+            "quantity": 2
+        }
+    },
+    "map_position": [5, 12],
+    "history": [
+        "Professor Cogsworth has been actively engaging with the town, moving between his workshop, the marketplace, and various locations in search of components for his inventions.",
+        "He frequently shares his excitement about steam-powered machinery and gears with others, sometimes losing track of his own tools in the process.",
+        "Recently, he assisted Mira by providing her with a blueprint fragment for engine repairs and engaged in trade with Gideon, exchanging a cogwheel for rare lubricant.",
+        "He continues to seek out missing parts like steam valves and cogwheels while deepening his interactions with fellow inventors and traders in Gearspring."
+    ],
+    "context": [],
+    "interactions": []
+}

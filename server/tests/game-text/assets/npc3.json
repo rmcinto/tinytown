@@ -1,0 +1,35 @@
+{
+    "npcId": "npc3",
+    "profile": {
+        "npcProfileId": "profile3",
+        "name": "Gideon the Smuggler",
+        "description": "Deals in “unofficial” goods—if you have the coin.",
+        "backstory": "A rogue trader who deals in rare and ‘unofficial’ goods. He knows every alley and underground deal happening in Gearspring. As a trader, he sells or barters everything in his inventory, nothing is sacred.",
+        "personality": ["charming", "opportunistic", "unpredictable"]
+    },
+    "inventory": {
+        "artifact5": {
+            "artifactId": "artifact5",
+            "name": "gold coin", 
+            "quantity": 10
+        },
+        "artifact6": { 
+            "artifactId": "artifact6",
+            "name": "forged permit", 
+            "quantity": 1,
+            "visible": true,
+            "price": "3 coins"
+        }
+    },
+    "map_position": [2, 7],
+    "history": [
+        "Gideon, the shadowy smuggler of Gearspring, thrives in the gray areas of trade.",
+        "He operates behind the scenes, meeting contacts in hidden alleys and striking deals for rare mechanical components.",
+        "His latest transaction involved selling a contraband coil to a mysterious buyer, securing a hefty gold coin payment in return.",
+        "Always on the move, Gideon is known for checking on hidden stashes and ensuring his business remains discreet.",
+        "His whispering negotiations and well-timed trades keep the underground economy of Gearspring alive.",
+        "He recently provided a tinkerer with a small gear set, proving that while his business may be shady, his connections make him indispensable to the village."
+    ],
+    "context": [],
+    "interactions": []
+}

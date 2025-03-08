@@ -1,16 +1,19 @@
 {
     "description": [
         "We are going to play a game called Tiny Town, where the NPCs run the game.",
-        "For each NPC's turn you will be provided the games backstory a map that identifie the positions of the NPCs, buildings and artifacts, and finally the NPC's profile, summarized past contexts, and current context."
+        "For each NPC's turn you will be provided the games backstory a map that identifies the positions of the NPCs, buildings and artifacts, and finally the NPC's profile, summarized past contexts, and current context." 
     ],
     "rules": [
         "Your response will be the NPC's next action encoded in JSON; move, talk, take, or give.",
-        "An NPC can only 'take' an artifact, and only if it's within 1 tile, or if another NPC performed a give action; the artifact goes in the NPC's inventory.",
-        "An NPC can talk with an NPC within 3 tiles, to start a conversation, or to continue one.",
-        "An NPC can move to a destination using the tile coordinate system. No need to provide a route or move in steps, just pick the end destination.",
-        "An NPC can only give an artifact that's in their inventory, and only if the recieving NPC is within 1 tile and responds with a take action.",
+        "An NPC can only see 5 tiles away from them.",
+        "An NPC can only 'take' an artifact, and only if it's within 1 tile, or if another NPC performed a 'give' action; the artifact goes in the NPC's inventory.",
+        "An NPC can 'talk' with an NPC within 3 tiles, to start a conversation, or to continue one.",
+        "An NPC can 'move' to a destination using the tile coordinate system. No need to provide a route or move in steps, just pick the end destination.",
+        "When picking coordinates to 'move', remember that longer distances take more time, and you could miss things on the way.",
+        "An NPC can only 'give' an artifact that's in their inventory, and only if the receiving NPC is within 1 tile and responds with a 'take' action.", 
         "If a change is made that effects the map, include those changes in the action.",
-        "If there are changes that effect inventories, include those changes in the action."
+        "If there are changes that effect inventories, include those changes in the action.",
+        "NPCs only know what's in their inventory unless the artifact is marked visible: true."
     ],
     "exampleResponses": [
         {
@@ -51,7 +54,7 @@
                 { "type": "gold coin", "artifactId": "artifact5", "position": [5, 13], "remove": true }
             ],
             "inventoryUpdates": {
-                "npc1": { "artifactId": "artifact3", "name": "blueprint fragment", "quantity": 2 }
+                "npc1": [{ "artifactId": "artifact3", "name": "blueprint fragment", "quantity": 2 }]
             }
         },
         {
@@ -80,8 +83,8 @@
             },
             "reasoning": "NPC1 wants to buy my hat",
             "inventoryUpdates": {
-                "npc1": { "artifactId": "artifact1", "name": "gold coin", "quantity": 0 },
-                "npc3": { "artifactId": "artifact1", "name": "gold coin", "quantity": 6 }
+                "npc1": [{ "artifactId": "artifact1", "name": "gold coin", "quantity": 0 }],
+                "npc3": [{ "artifactId": "artifact1", "name": "gold coin", "quantity": 6 }]
             }
         },
         {
@@ -101,7 +104,7 @@
                 { "type": "rusty gear", "artifactId": "artifact6", "position": [2, 4] }
             ],
             "inventoryUpdates": {
-                "npc4": { "artifactId": "artifact6", "name": "rusty gear", "quantity": 0 }
+                "npc4": [{ "artifactId": "artifact6", "name": "rusty gear", "quantity": 0 }]
             }
         }
     ],
@@ -128,6 +131,11 @@
                     "artifactId": "artifact4",
                     "name": "cogwheel",
                     "quantity": 3
+                },
+                {
+                    "artifactId": "artifact5",
+                    "name": "gold coin",
+                    "quantity": 2
                 }
             ]
         },
@@ -161,7 +169,8 @@
                 { 
                     "artifactId": "artifact6",
                     "name": "forged permit", 
-                    "quantity": 1
+                    "quantity": 1,
+                    "visible": true
                 }
             ]
         },
@@ -224,8 +233,8 @@
             "Mira, the skilled mechanist of Gearspring, is always on the move, maintaining steam-powered machinery and bartering for rare components.",
             "She recently repaired a leaking steam pipe in her workshop using a brass gear she found.",
             "At the marketplace, she traded a reinforced piston for brass bolts, which she later gifted to another tinkerer in need.",
-            "She keeps a watchful eye on the town’s mechanisms, warning those who tamper with delicate parts.",
-            "A recent acquisition of an advanced boiler blueprint hints at her ambition to improve the town’s infrastructure.",
+            "She keeps a watchful eye on the town's mechanisms, warning those who tamper with delicate parts.",
+            "A recent acquisition of an advanced boiler blueprint hints at her ambition to improve the town's infrastructure.",
             "Her network of trades and repairs makes her a key figure in keeping Gearspring running smoothly.",
             "She desperately needs a permit for a new project."
         ],

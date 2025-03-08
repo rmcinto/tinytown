@@ -33,11 +33,11 @@ app.use(express.json());
 const handleMessage = async (
     type: 'http' | 'ws',
     route: string,
-    message: string,
+    message: any,
     callback: (error: Error | null, response: string | null) => void
 ) => {
     try {
-        console.log(`[${type.toUpperCase()}] Route: /${route} | Message:`, message);
+        console.log(`[${type.toUpperCase()}] Route: /${route}`);
 
         //we don't want a directory traversal (or path traversal) vulnerability 
         if (route[0] === ".") {
@@ -56,7 +56,12 @@ const handleMessage = async (
             throw new Error(`Service '${route}' must export a 'handleRequest' function.`);
         }
 
+        if (typeof message !== "string") {
+            message = JSON.stringify(message);
+        }
+
         const response = await service.handleRequest(message);
+
         callback(null, response);
     } 
     catch (error) {
@@ -88,15 +93,15 @@ app.post('/:route', async (req: Request, res: Response): Promise<void> => {
 wss.on('connection', (ws: WebSocket) => {
     console.log('WebSocket client connected');
 
-    ws.on('message', async (data: string) => {
+    ws.on('message', async (data: any) => {
         try {
-            const parsedData = JSON.parse(data);
+            console.log('Messasge recieved');
+            const text = data instanceof Buffer ? data.toString('utf8') : data;
+            const parsedData = JSON.parse(text);
             const { route, payload } = parsedData;
-
             if (!route || !payload) {
                 return ws.send(JSON.stringify({ error: 'Route and message are required' }));
             }
-
             handleMessage('ws', route, payload, (err, response) => {
                 if (err) return ws.send(JSON.stringify({ error: err.message }));
                 ws.send(JSON.stringify({ response }));
@@ -104,6 +109,9 @@ wss.on('connection', (ws: WebSocket) => {
         } 
         catch (error) {
             ws.send(JSON.stringify({ error: 'Invalid message format. Use JSON: { "route": "chat", "payload": "Hello" }' }));
+        }
+        finally {
+            console.log('Messasge processed');
         }
     });
 

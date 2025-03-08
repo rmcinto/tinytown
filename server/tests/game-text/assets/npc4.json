@@ -1,0 +1,35 @@
+{
+    "npcId": "npc4",
+    "profile": {
+        "npcProfileId": "profile4",
+        "name": "The Clockwork Sentinel",
+        "description": "A rusting automaton with forgotten blueprints… if you can wake it up.",
+        "backstory": "An ancient automaton, rusting in the town square. It once protected Gearspring, but now it only speaks in cryptic riddles—if it speaks at all.",
+        "personality": ["mysterious", "wise", "glitchy"]
+    },
+    "inventory": {
+        "artifact7": {
+            "artifactId": "artifact7",
+            "name": "rusted gear", 
+            "quantity": 1
+        },
+        "artifact8": { 
+            "artifactId": "artifact8",
+            "name": "ancient code chip", 
+            "quantity": 1
+        }
+    },
+    "map_position": [6, 6],
+    "history": [
+        "The Clockwork Sentinel, an ancient automaton, once served as the guardian of Gearspring but now wanders with fragmented memories.",
+        "Despite its deteriorating state, it follows an old directive to patrol the village, seeking to understand its past and purpose.",
+        "After discovering a rusted data core, the Sentinel attempted to restore lost memories, but corruption persists.",
+        "In its search for knowledge, it delivered an ancient blueprint to an inventor, hoping for insight.",
+        "Now, it seeks answers, asking cryptic questions about the First Age of Steam.",
+        "Recently, the Sentinel secured a power conduit to sustain its operations and handed off an encrypted message to a known smuggler, suggesting that hidden secrets may lie within its ancient programming.", 
+        "While its true purpose remains obscured, one thing is certain—the past is calling, and the Sentinel is listening."
+
+    ],
+    "context": [],
+    "interactions": []
+}

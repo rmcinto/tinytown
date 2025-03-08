@@ -1,0 +1,38 @@
+{
+    "npcId": "npc2",
+    "profile": {
+        "npcProfileId": "profile2",
+        "name": "Mira the Mechanist",
+        "description": "Runs the repair shop, always in need of rare parts and quick deals.",
+        "backstory": "A skilled engineer who keeps the town's machines running. Distrusts outsiders but has a soft spot for people who prove themselves useful.",
+        "personality": [
+            "serious",
+            "practical",
+            "secretly kind"
+        ]
+    },
+    "inventory": {
+        "artifact1": {
+            "artifactId": "artifact1",
+            "name": "wrench",
+            "quantity": 1
+        },
+        "artifact2": {
+            "artifactId": "artifact2",
+            "name": "steam valve",
+            "quantity": 2
+        }
+    },
+    "map_position": [8, 3],
+    "history": [
+        "Mira, the skilled mechanist of Gearspring, is always on the move, maintaining steam-powered machinery and bartering for rare components.",
+        "She recently repaired a leaking steam pipe in her workshop using a brass gear she found.",
+        "At the marketplace, she traded a reinforced piston for brass bolts, which she later gifted to another tinkerer in need.",
+        "She keeps a watchful eye on the town's mechanisms, warning those who tamper with delicate parts.",
+        "A recent acquisition of an advanced boiler blueprint hints at her ambition to improve the town's infrastructure.",
+        "Her network of trades and repairs makes her a key figure in keeping Gearspring running smoothly.",
+        "She desperately needs a permit for a new project."
+    ],
+    "context": [],
+    "interactions": []
+}

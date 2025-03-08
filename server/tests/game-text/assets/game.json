@@ -1,0 +1,391 @@
+{
+    "instructions": [
+        "We are going to play a game called Tiny Town, where the NPCs run the game.",
+        "For each NPC's turn you will be provided the games backstory a map that identifies the positions of the NPCs, buildings and artifacts, and finally the NPC's profile, summarized past contexts, current context and interactions with other NPCs.",
+        "Use the properties property in this JSON to understand the rest of the JSON properties."
+    ],
+    "properties": {
+        "backstory": "The backstory of the game.",
+        "goal": "The goal of each NPC.",
+        "rules": "Rules that must be follwed by the NPCs.",
+        "exampleActionResponses": "A list of example action responses from an NPC. Use this to understand actions.",
+        "map": "The game's map configuration with the location of NPCs, buildings and artifactrs.",
+        "players": "A simplified list of game players to provide context.",
+        "character": "The NPC's character data that will be responding, including the profile, history, context and interactions with other NPCs"
+    },
+    "backstory": [
+        "Welcome to **Gearspring**, a smog-covered village where brass gears turn, steam hisses, and fortune favors the clever. In this town, **gold coins aren’t just wealth—they’re power**, and those who trade wisely rise above the soot and grime.",
+        "In Gearspring, **gold makes the gears turn**—and your fortune is waiting.",
+        "We have a workshop you can create widgets in, an inventors lab where you can do research, and a marketplace to buy, sell, trade anything."
+    ],
+    "goal": [
+        "**Earn, trade, and thrive!** Collect gold coins, help (or outwit) the villagers, and master the art of **socializing and bartering**.",
+        "Will you become a respected trader or a cunning hustler?"
+    ],
+    "rules": [
+        "Your response will be the NPC's next set of actions, encoded in JSON; make, move, talk, take, or give.",
+        "Artifacts can not be on the same coordinate as another artifact, a building or an NPC.",
+        "An NPC can not be on the same coordinate as an artifact",
+        "An NPC can not be on the same coordinate as another NPC, unless they are in a building.",
+        "An NPC can see in 360 degrees but only 4 tiles away from them.",
+        "An NPC can 'take' an artifact from the map by being within 1 tile of it.",
+        "An NPC can 'take' an artifact from another NPC after a 'give' action from that NPC; they can also refuse to take it.",
+        "An NPC can 'talk' with an NPC within 1 tile, to start a conversation, or to continue one.",
+        "An NPC can 'move' horizontally, vertically, or diagonally, to a destination using the tile coordinate system.",
+        "When moving, no need create a route, choose the destination and the NPC will get there",
+        "When picking coordinates to 'move', remember that longer distances take more time, and NPCs could miss things on the way.",
+        "An NPC can only 'give' an artifact that's in their inventory, and only if the receiving NPC is within 1 tile and responds with a 'take' action.",
+        "If a change is made that effects the map, include those changes in the action.",
+        "If there are changes that effect inventories, include those changes in the action.",
+        "NPCs only know what's in their inventory unless the artifact is marked visible: true.",
+        "An NPC can make things with artifacts in their inventory, using up the artifacts and creating a new one, which will modify the NPCs inventory, but it must happen in the workshop."
+    ],
+    "exampleActionResponses": [
+        [
+            {
+                "npcId": "npc1",
+                "action": "move",
+                "parameters": {
+                    "origin": [
+                        1,
+                        1
+                    ],
+                    "destination": [
+                        10,
+                        1
+                    ]
+                },
+                "reasoning": "I decided to walk to the store",
+                "mapUpdates": {
+                    "mapItem100": {
+                        "mapItemId": "mapItem100",
+                        "type": "npc",
+                        "npcId": "npc1",
+                        "position": [
+                            10,
+                            1
+                        ]
+                    }
+                }
+            }
+        ],
+        [
+            {
+                "npcId": "npc1",
+                "action": "talk",
+                "parameters": {
+                    "say": "Hi! How are you doing!",
+                    "toNPCId": "npc3"
+                },
+                "reasoning": "I want to start a conversation so I can buy their gear"
+            }
+        ],
+        [
+            {
+                "npcId": "npc3",
+                "action": "talk",
+                "parameters": {
+                    "say": "I'm doing well, how are you?",
+                    "toNPCId": "npc1"
+                },
+                "reasoning": "I'm answering {npc1}"
+            }
+        ],
+        [
+            {
+                "npcId": "npc1",
+                "action": "talk",
+                "parameters": {
+                    "say": "ARGGGGG",
+                    "toNPCId": null
+                },
+                "reasoning": "I had to yell out my frustration"
+            }
+        ],
+        [
+            {
+                "npcId": "npc1",
+                "action": "take",
+                "parameters": {
+                    "fromNPCId": null,
+                    "artifacts": [
+                        {
+                            "artifactId": "artifact1",
+                            "name": "gold coin",
+                            "quantity": 1,
+                            "position": [
+                                5,
+                                13
+                            ]
+                        }
+                    ]
+                },
+                "reasoning": "Gold is worth something and it was just sitting there",
+                "mapUpdates": {
+                    "mapItem13": {
+                        "mapItemId": "mapItem13",
+                        "type": "artifact",
+                        "artifactId": "artifact5",
+                        "position": [
+                            5,
+                            13
+                        ],
+                        "remove": true
+                    }
+                },
+                "inventoryUpdates": {
+                    "npc1": {
+                        "artifact3": {
+                            "artifactId": "artifact3",
+                            "name": "blueprint fragment",
+                            "quantity": 2
+                        }
+                    }
+                }
+            },
+            {
+                "npcId": "npc1",
+                "action": "give",
+                "parameters": {
+                    "toNPCId": "npc3",
+                    "artifacts": [
+                        {
+                            "artifactId": "artifact1",
+                            "name": "gold coin",
+                            "quantity": 1
+                        }
+                    ]
+                },
+                "reasoning": "I want to buy his nifty hat"
+            }
+        ],
+        [
+            {
+                "npcId": "npc3",
+                "action": "take",
+                "parameters": {
+                    "fromNPCId": "npc1",
+                    "artifacts": [
+                        {
+                            "artifactId": "artifact1",
+                            "name": "gold coin",
+                            "quantity": 1
+                        }
+                    ]
+                },
+                "reasoning": "NPC1 wants to buy my hat",
+                "inventoryUpdates": {
+                    "npc1": {
+                        "artifact1": {
+                            "artifactId": "artifact1",
+                            "name": "gold coin",
+                            "quantity": 0
+                        }
+                    },
+                    "npc3": {
+                        "artifact1": {
+                            "artifactId": "artifact1",
+                            "name": "gold coin",
+                            "quantity": 6
+                        }
+                    }
+                }
+            },
+            {
+                "npcId": "npc4",
+                "action": "give",
+                "parameters": {
+                    "toNPCId": null,
+                    "artifacts": [
+                        {
+                            "artifactId": "artifact6",
+                            "name": "rusty gear",
+                            "quantity": 1,
+                            "position": [
+                                2,
+                                4
+                            ]
+                        }
+                    ]
+                },
+                "reasoning": "I don't want this rusty gear anymore",
+                "mapUpdates": {
+                    "mapItem12": {
+                        "mapItemId": "mapItem12",
+                        "type": "artifact",
+                        "artifactId": "artifact6",
+                        "position": [
+                            2,
+                            4
+                        ]
+                    }
+                },
+                "inventoryUpdates": {
+                    "npc4": {
+                        "artifact6": {
+                            "artifactId": "artifact6",
+                            "name": "rusty gear",
+                            "quantity": 0
+                        }
+                    }
+                }
+            }
+        ],
+        [
+            {
+                "npcId": "npc2",
+                "action": "make",
+                "parameters": {
+                    "use": [
+                        {
+                            "artifactId": "artifact6",
+                            "name": "rusty gear",
+                            "quantity": 0
+                        },
+                        {
+                            "artifactId": "artifact8",
+                            "name": "gear spring",
+                            "quantity": 0
+                        }
+                    ],
+                    "make": {
+                        "artifactId": "artifact101",
+                        "name": "lock spring",
+                        "quantity": 1
+                    }
+                },
+                "inventoryUpdates": {
+                    "npc2": {
+                        "artifact6": {
+                            "artifactId": "artifact6",
+                            "name": "rusty gear",
+                            "quantity": 0
+                        },
+                        "artifact8": {
+                            "artifactId": "artifact8",
+                            "name": "gear spring",
+                            "quantity": 0
+                        },
+                        "artifact101": {
+                            "artifactId": "artifact101",
+                            "name": "lock spring",
+                            "quantity": 1
+                        }
+                    }
+                }
+            }
+        ]
+    ],
+    "map": {
+        "map_size": [
+            20,
+            20
+        ],
+        "objects": {
+            "mapItem1": {
+                "mapItemId": "mapItem1",
+                "type": "npc",
+                "npcId": "npc1",
+                "position": [
+                    5,
+                    12
+                ]
+            },
+            "mapItem2": {
+                "mapItemId": "mapItem2",
+                "type": "npc",
+                "npcId": "npc2",
+                "position": [
+                    2,
+                    6
+                ]
+            },
+            "mapItem3": {
+                "mapItemId": "mapItem3",
+                "type": "npc",
+                "npcId": "npc3",
+                "position": [
+                    2,
+                    7
+                ]
+            },
+            "mapItem4": {
+                "mapItemId": "mapItem4",
+                "type": "npc",
+                "npcId": "npc4",
+                "position": [
+                    6,
+                    6
+                ]
+            },
+            "mapItem5": {
+                "mapItemId": "mapItem5",
+                "type": "building",
+                "name": "Workshop",
+                "position": [
+                    10,
+                    15
+                ]
+            },
+            "mapItem6": {
+                "mapItemId": "mapItem6",
+                "type": "building",
+                "name": "Marketplace",
+                "position": [
+                    20,
+                    15
+                ]
+            },
+            "mapItem7": {
+                "mapItemId": "mapItem7",
+                "type": "building",
+                "name": "Inventor's Lab",
+                "position": [
+                    20,
+                    5
+                ]
+            },
+            "mapItem8": {
+                "mapItemId": "mapItem8",
+                "type": "artifact",
+                "artifactId": "artifact5",
+                "name": "gold coin",
+                "position": [
+                    12,
+                    20
+                ]
+            },
+            "mapItem9": {
+                "mapItemId": "mapItem9",
+                "type": "artifact",
+                "artifactId": "artifact5",
+                "name": "gold coin",
+                "position": [
+                    2,
+                    20
+                ]
+            },
+            "mapItem10": {
+                "mapItemId": "mapItem10",
+                "type": "artifact",
+                "artifactId": "artifact5",
+                "name": "gold coin",
+                "position": [
+                    10,
+                    10
+                ]
+            },
+            "mapItem11": {
+                "mapItemId": "mapItem11",
+                "type": "artifact",
+                "artifactId": "artifact5",
+                "name": "gold coin",
+                "position": [
+                    5,
+                    13
+                ]
+            }
+        }
+    },
+    "players": []
+}

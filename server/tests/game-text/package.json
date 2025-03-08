@@ -1,0 +1,23 @@
+{
+  "name": "game-text",
+  "version": "1.0.0",
+  "description": "A simple text art map for the tiny town game",
+  "license": "MIT",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "dev": "ts-node src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "entities": "file:../entities",
+    "ws": "^8.18.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "@types/ws": "^8.18.0",
+    "typescript": "^5.8.2"
+  }
+}
