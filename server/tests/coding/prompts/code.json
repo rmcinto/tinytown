@@ -1,0 +1,20 @@
+{
+    "preamble": [
+        "This is a JSON request that represents the configuration and current state of a build system.",
+        "Your task is to generate a JSON response that represents the next set of actions to move toward the build system goal.",
+        "Use the schema property to understand the JSON structure."
+    ],
+    "schema": {
+        "request": {
+            "instructions": "array of string (the instructions to use when generating the output)",
+            "goal": "array of string (the end goal of the build system)",
+            "examples": "array of example actions (the examples to use when generating the output)",
+            "details": "object (the details to use when generating the output, it will have it's own schema)",
+            
+            "history": "array of action (the history of actions taken to get to the current state)",
+        },
+        "response": {
+            "actions": "array of action (the next actions to take to get closer to the end goal)"
+        }
+    }
+}

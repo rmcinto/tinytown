@@ -1,12 +1,13 @@
-import { AnyAaaaRecord } from 'dns';
 import { OpenAI } from 'openai';
 
 const MODEL_NAME = 'o3-mini';
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-export const handleRequest = async (message: string): Promise<any | null> => {
+export const handleRequest = async (message: any): Promise<any | null> => {
     console.log("Start chat")
-    let content = message;
+    let content = typeof message === 'string' 
+        ? message 
+        : JSON.stringify(message);
 
     let actionText;
 
@@ -20,6 +21,7 @@ export const handleRequest = async (message: string): Promise<any | null> => {
     }
     catch(error: any) {
         console.log("Error Getting Chat")
+        console.log(error);
         return {
             message: error.message || error,
             stack: error.stack
@@ -36,17 +38,17 @@ export const handleRequest = async (message: string): Promise<any | null> => {
     }
     
     let internalReasoning;
-    try {
-        content = `(user: ${content}\nsystem: ${actionText})\n\n Why did you choose this response?`;
-        const response = await openai.chat.completions.create({
-            model: MODEL_NAME,
-            messages: [{ role: 'user', content }],
-        });
-        internalReasoning = response.choices[0].message.content;
-    }
-    catch(ex) {
-        console.log("Error Getting Reasoning")
-    }
+    //try {
+    //    content = `(user: ${content}\nsystem: ${actionText})\n\n Why did you choose this response?`;
+    //    const response = await openai.chat.completions.create({
+    //        model: MODEL_NAME,
+    //        messages: [{ role: 'user', content }],
+    //    });
+    //    internalReasoning = response.choices[0].message.content;
+    //}
+    //catch(ex) {
+    //    console.log("Error Getting Reasoning")
+    //}
     
     if (actions) {
         return {

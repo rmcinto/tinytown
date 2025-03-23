@@ -1,0 +1,31 @@
+// Basic styles for ChessBoard component
+.chess-board {
+  display: grid;
+  grid-template-columns: repeat(8, 50px);
+  grid-template-rows: repeat(8, 50px);
+}
+
+.chess-row {
+  display: contents;
+}
+
+.chess-cell {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.white {
+  background-color: #f0d9b5;
+}
+
+.black {
+  background-color: #b58863;
+}
+
+.selected {
+  outline: 2px solid red;
+}
+

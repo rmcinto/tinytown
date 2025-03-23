@@ -18,16 +18,17 @@ const app = express();
 const server = https.createServer(options, app);
 const wss = new WebSocketServer({ server });
 
-const PORT = process.env.PORT || 3000;
+const PORT = (process.env.PORT as unknown as number) || 3000;
+const HOST = process.env.HOST || 'localhost';
 
 app.use(cors());
 app.use(express.json());
 
 /**
- * Dynamically loads the appropriate service for handling requests.
+ * Dynamically loads the appropriate interface for handling requests.
  * @param {string} type - The request type ("http" or "ws").
  * @param {string} route - The API route (e.g., "chat", "summary").
- * @param {string} message - The user's message.
+ * @param {any} message - The user's message.
  * @param {(eresponse: any) => void} callback - Callback function for response handling.
  */
 const handleMessage = async (
@@ -44,23 +45,19 @@ const handleMessage = async (
             throw new Error(`Invalid route '${route}'.`);
         }
 
-        const servicePath = path.join(__dirname, 'services', `${route}.ts`);
+        const servicePath = path.join(__dirname, 'interfaces', `${route}.ts`);
 
         if (!fs.existsSync(servicePath)) {
             throw new Error(`Service for route '${route}' not found.`);
         }
 
-        const service = await import(servicePath);
+        const handler = await import(servicePath);
 
-        if (typeof service.handleRequest !== 'function') {
-            throw new Error(`Service '${route}' must export a 'handleRequest' function.`);
+        if (typeof handler.handleRequest !== 'function') {
+            throw new Error(`Handler '${route}' must export a 'handleRequest' function.`);
         }
 
-        if (typeof message !== "string") {
-            message = JSON.stringify(message);
-        }
-
-        const response = await service.handleRequest(message);
+        const response = await handler.handleRequest(message);
 
         callback(response);
     }
@@ -74,13 +71,17 @@ const handleMessage = async (
 };
 
 // --- Catch-All HTTP Route ---
-app.post('/:route', async (req: Request, res: Response): Promise<void> => {
+app.all('/:route', async (req: Request, res: Response): Promise<void> => {
+    console.log(`Recieved an HTTP request for route: ${req.params.route}`);
+
     handleMessage(
         'http', 
         req.params.route, 
         req.body, 
         (response) => res.json(response)
     );
+
+    console.log(`Completed an HTTP request for route: ${req.params.route}`);
 });
 
 // --- WebSocket Server ---
@@ -112,6 +113,6 @@ wss.on('connection', (ws: WebSocket) => {
 });
 
 // --- Start the Server ---
-server.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+server.listen(PORT, HOST, () => {
+    console.log(`Server running on https://${HOST}:${PORT}`);
 });

@@ -1,15 +1,15 @@
 import WebSocket from 'ws';
 import fs from 'fs';
 import * as readline from 'readline';
-import { CharacterDict } from '../../../src/entities/Character';
+import { CharacterDict } from '../entities/Character';
 import game from '../assets/game.json';
 import npc1 from '../assets/npc1.json';
 import npc2 from '../assets/npc2.json';
 import npc3 from '../assets/npc3.json';
 import npc4 from '../assets/npc4.json';
-import { GameSession, NPCPrompt } from "../../../src/entities/Game";
-import { BuildingMapObject, MapObject, NPCMapObject } from '../../../src/entities/Map';
-import { Action, GiveParameters, MakeParameters, MoveParameters, TakeParameters, TalkParameters } from '../../../src/entities/Action';
+import { GameSession, NPCPrompt } from "../entities/Game";
+import { BuildingMapObject, MapData, MapObject, NPCMapObject } from '../entities/Map';
+import { Action, GiveParameters, InteractParameters, MakeParameters, MapUpdate, MapUpdateItem, MoveParameters, TakeParameters, TalkParameters } from '../entities/Action';
 import { v4 as uuidV4 } from "uuid";
 
 const gameId = uuidV4();
@@ -71,6 +71,10 @@ main();
 
 async function main() {
     try {
+        process.on('SIGINT', () => {
+            shutdownGame(gameSession, conn);
+            process.exit(0);
+        });
         const [gameSession, npcs] = loadGame();
         const conn = await connectToServer(gameSession, npcs);
         renderMap(gameSession, npcs);
@@ -92,8 +96,12 @@ async function gameLoop(gameSession: GameSession, npcs: CharacterDict, conn: Con
     try {
         for (let npc of Object.values(npcs)) {
             const npcPrompt = {
-                ...gameSession,
-                character: npc
+                gameInstructions: gameSession.gameInstructions,
+                properties: gameSession.properties,
+                gameState: {
+                    ...gameSession.gameState,
+                    character: npc
+                }
             };
             //@ts-ignore
             delete npcPrompt.history;
@@ -105,15 +113,19 @@ async function gameLoop(gameSession: GameSession, npcs: CharacterDict, conn: Con
     }
 
     // After processing all NPCs, ask if the user wants to continue.
-    const shouldContinue = await askContinue();
+    const shouldContinue = true//await askContinue();
     if (shouldContinue) {
         setTimeout(() => gameLoop(gameSession, npcs, conn), GAME_LOOP_WAIT_MS);
     }
     else {
-        console.log("Closing connection and exiting game loop.");
-        fs.writeFileSync(`logs/${GAME_FILE}.log.json`, JSON.stringify(gameSession, null, 4));
-        conn.close();
+        shutdownGame(gameSession, conn);
     }
+}
+
+function shutdownGame(gameSession: GameSession, conn: Conn) {
+    console.log("Closing connection and exiting game loop.");
+    fs.writeFileSync(`logs/${GAME_FILE}.log.json`, JSON.stringify(gameSession, null, 4));
+    conn.close();
 }
 
 /**
@@ -130,7 +142,7 @@ function loadGame(): [GameSession, CharacterDict] {
 
     // Add the NPCs to the game's players list
     for (let npc of Object.values(npcs)) {
-        gameSession.players.push({
+        gameSession.gameState.players.push({
             npcId: npc.npcId,
             name: npc.profile.name,
             description: npc.profile.description,
@@ -215,70 +227,99 @@ async function connectToServer(gameSession: GameSession, npcs: CharacterDict): P
  * @returns 
  */
 function renderMap(gameSession: GameSession, npcs: CharacterDict) {
-    const mapData = gameSession.map;
-    const [width, height] = mapData.map_size;
-    // Create a grid (2D array) filled with dots.
-    const grid: string[][] = Array.from({ length: height }, () => Array(width).fill('.'));
+    const maps = gameSession.gameState.maps;
+    const mapDataArray = Object.values(maps);
 
-    // Place objects on the grid.
-    Object.values(mapData.objects).forEach((obj: MapObject) => {
-        const [x, y] = obj.position; // positions are 1-indexed
-        let symbol = obj.symbol || '?';
-        // Adjust for zero-indexing.
-        grid[y - 1][x - 1] = symbol;
+    // Create an array of string arrays, each representing a map with its own axes.
+    const mapBlocks: string[][] = mapDataArray.map(mapData => {
+        const width = mapData.map_size[0];
+        const height = mapData.map_size[1];
+
+        // Create grid (2D array) filled with dots.
+        const grid: string[][] = Array.from({ length: height }, () => Array(width).fill('.'));
+
+        // Place objects on the grid.
+        Object.values(mapData.objects).forEach((obj: MapObject) => {
+            const [x, y] = obj.position; // positions are 1-indexed
+            grid[y - 1][x - 1] = obj.symbol || '?';
+        });
+
+        // Build block lines with row numbers (from top, showing highest row at top)
+        const blockLines: string[] = [];
+        for (let row = height; row >= 1; row--) {
+            const rowLabel = row.toString().padStart(2, ' ');
+            const rowCells = grid[row - 1].join("  ");
+            blockLines.push(`${rowLabel} | ${rowCells}`);
+        }
+        // Build column header.
+        let colHeader = "    "; // extra space for row labels
+        for (let col = 1; col <= width; col++) {
+            colHeader += col.toString().padStart(2, ' ') + " ";
+        }
+        blockLines.push(colHeader);
+        return blockLines;
     });
 
-    // Build the output string (print rows from top to bottom).
-    let output = "";
-    for (let row = height; row >= 1; row--) {
-        const rowLabel = row.toString().padStart(2, ' ');
-        const rowCells = grid[row - 1].join("  ");
-        output += `${rowLabel} | ${rowCells}\n`;
-    }
-    // Build the bottom column header.
-    let colHeader = "    ";
-    for (let col = 1; col <= width; col++) {
-        colHeader += col.toString().padStart(2, ' ') + " ";
-    }
-    output += colHeader;
+    // Find the maximum height among the map blocks.
+    const maxBlockHeight = Math.max(...mapBlocks.map(block => block.length));
 
+    // Pad each block at the top so they all have the same number of lines.
+    const paddedBlocks = mapBlocks.map(block => {
+        const blockWidth = block[0].length;
+        const missingLines = maxBlockHeight - block.length;
+        // Create a blank line with the same width.
+        const blankLine = " ".repeat(blockWidth);
+        return Array(missingLines).fill(blankLine).concat(block);
+    });
+
+    // Combine the padded blocks line-by-line with a vertical separator.
+    let combinedOutput = "";
+    for (let i = 0; i < maxBlockHeight; i++) {
+        const lineParts = paddedBlocks.map(block => block[i]);
+        // Use " || " as the vertical separator between maps.
+        if (i === maxBlockHeight -1)
+            combinedOutput += lineParts.join("|| ") + "\n";
+        else
+            combinedOutput += lineParts.join(" || ") + "\n";
+    }
+
+    // Append game session history below the maps.
+    let historyOutput = "";
     for (
         let i = gameSession.history.length - 1;
         i >= Math.max(0, gameSession.history.length - 8);
         i--
     ) {
-        output += "\n-------------------------------------------------------------\n";
+        historyOutput += "\n-------------------------------------------------------------\n";
         const action = gameSession.history[i];
         let params;
         const npc = npcs[action.npcId];
         let toNpc, fromNpc;
-        output += `${npc.profile.name}:`;
+        historyOutput += `${npc.profile.name}:`;
         switch (action.action) {
             case "give":
                 params = action.parameters as GiveParameters;
                 toNpc = npcs[params.toNPCId!];
                 for (let artifact of params.artifacts) {
                     if (toNpc) {
-                        output += `\nGave ${artifact.quantity}x of ${artifact.name} to ${toNpc.profile.name}`;
-                    }
-                    else {
-                        output += `\nDropped ${artifact.quantity}x of ${artifact.name} at ${artifact.position}`;
+                        historyOutput += `\nGave ${artifact.quantity}x of ${artifact.name} to ${toNpc.profile.name}`;
+                    } else {
+                        historyOutput += `\nDropped ${artifact.quantity}x of ${artifact.name} at ${artifact.position}`;
                     }
                 }
                 break;
             case "move":
                 params = action.parameters as MoveParameters;
-                output += `\nMoved from ${params.origin} to ${params.destination}`;
+                historyOutput += `\nMoved from ${params.origin} to ${params.destination}`;
                 break;
             case "take":
                 params = action.parameters as TakeParameters;
                 fromNpc = npcs[params.fromNPCId!];
                 for (let artifact of params.artifacts) {
                     if (fromNpc) {
-                        output += `\nAccepted ${artifact.quantity}x of ${artifact.name} from ${fromNpc.profile.name}`;
-                    }
-                    else {
-                        output += `\nPicked up ${artifact.quantity}x of ${artifact.name} from ${artifact.position}`;
+                        historyOutput += `\nAccepted ${artifact.quantity}x of ${artifact.name} from ${fromNpc.profile.name}`;
+                    } else {
+                        historyOutput += `\nPicked up ${artifact.quantity}x of ${artifact.name} from ${artifact.position}`;
                     }
                 }
                 break;
@@ -286,20 +327,27 @@ function renderMap(gameSession: GameSession, npcs: CharacterDict) {
                 params = action.parameters as TalkParameters;
                 toNpc = npcs[params.toNPCId];
                 if (toNpc) {
-                    output += `\nSaid to ${toNpc.profile.name} "${params.say}"`;
-                }
-                else {
-                    output += `\nSaid "${params.say}"`;
+                    historyOutput += `\nSaid to ${toNpc.profile.name} "${params.say}"`;
+                } else {
+                    historyOutput += `\nSaid "${params.say}"`;
                 }
                 break;
             case "make":
                 params = action.parameters as MakeParameters;
-                output += `\nMade a ${params.make.name} using ${params.use.map((a) => a.name)}`;
+                historyOutput += `\nMade a ${params.make.name} using ${params.use.map((a) => a.name)}`;
+                break;
+            case "interact":
+                params = action.parameters as InteractParameters;
+                historyOutput += `\n${params.interaction} ${params.effect}`;
+                break;
+            case "wait":
+                historyOutput += `\nWaited`;
                 break;
         }
-        output += `\nReasoning: ${action.reasoning}\n`;
+        historyOutput += `\nReasoning: ${action.reasoning}\n`;
     }
 
+    const output = combinedOutput + historyOutput;
     console.clear();
     console.log(output);
 }
@@ -322,7 +370,7 @@ async function playNPC(conn: Conn, npcPrompt: NPCPrompt) {
 }
 
 function handleNpcResponse(gameSession: GameSession, npcs: CharacterDict, actions: Action[], handle: ResponseHandle) {
-    const mapObjects = gameSession.map.objects;
+    
     if (!Array.isArray(actions)) {
         actions = [actions];
     }
@@ -348,15 +396,24 @@ function handleNpcResponse(gameSession: GameSession, npcs: CharacterDict, action
             if (toNPC)
                 toNPC.interactions.push(action);
         }
-
+        if (action.newMaps) {
+            for (let key of Object.keys(action.newMaps)) {
+                const mapData = action.newMaps[key];
+                gameSession.gameState.maps[key] = mapData;
+            }
+        }
         if (action.mapUpdates) {
-            for (let key of Object.keys(action.mapUpdates)) {
-                const mapUpdate = action.mapUpdates[key];
-                if (mapUpdate.remove) {
-                    delete mapObjects[key];
-                }
-                else {
-                    gameSession.map.objects[key] = mapUpdate as MapObject;
+            for (let mapId of Object.keys(action.mapUpdates)) {
+                const mapUpdate = action.mapUpdates[mapId] as unknown as MapUpdate;
+                const mapObjects = gameSession.gameState.maps[mapId].objects;
+                for(let mapItemId of Object.keys(mapUpdate)) {
+                    const mapUpdateItem = mapUpdate[mapItemId];
+                    if (mapUpdateItem.remove) {
+                        delete mapObjects[mapItemId];
+                    }
+                    else {
+                        mapObjects[mapItemId] = mapUpdateItem;
+                    }
                 }
             }
         }
@@ -374,6 +431,8 @@ function handleNpcResponse(gameSession: GameSession, npcs: CharacterDict, action
             }
         }
     }
+
+    fs.writeFileSync(`logs/${GAME_FILE}.log.json`, JSON.stringify(gameSession, null, 4));
 
     renderMap(gameSession, npcs);
 

@@ -1,0 +1,261 @@
+{
+    "preamble": [
+        "You are a build system that generates a JSON response that represents the next set of actions to move toward the build system goal.",
+        "This is a JSON request that represents the configuration and current state of a build system."
+    ],
+    "schema": {
+        "actionType": {
+            "description": "An action to take to move toward the goal.",
+            "type": "string",
+            "enum": [
+                "run-command",
+                "think"
+            ]
+        },
+        "action": {
+            "description": "An action to take to move toward the goal.",
+            "type": "object",
+            "properties": {
+                "actionType": {
+                    "description": "The type of action to take.",
+                    "type": "actionType",
+                    "required": true
+                },
+                "cognition": {
+                    "description": "A though process to consider on the next round.",
+                    "type": "string",
+                    "required": "true when the actionType is 'think'"
+                },
+                "path": {
+                    "description": "The path to the file that the action will be performed on; files only. It should be the path of the file at the end of the action so we can reload the file.",
+                    "type": "string",
+                    "required": "true when the actionType is 'run-command' and the command creates or modifies a file."
+                },
+                "command": {
+                    "description": "The command to run to perform the action.",
+                    "type": "string",
+                    "required": "true when the actionType is 'run-command'"
+                },
+                "description": {
+                    "description": "A description of the action.",
+                    "type": "string",
+                    "required": true
+                },
+                "reasoning": {
+                    "description": "The reasoning behind the action.",
+                    "type": "string",
+                    "required": true
+                },
+                "commandResult": {
+                    "description": "The result of the command that was run.",
+                    "type": "string",
+                    "required": "true when the actionType is 'run-command'"
+                }
+            }
+        },
+        "example": {
+            "description": "An example action to model the response after.",
+            "type": "Record<string, action>"
+        },
+        "request": {
+            "description": "This is a JSON request that represents the configuration and current state of a build system.",
+            "type": "object",
+            "properties": {
+                "instructions": {
+                    "description": "A list of instructions to use to generate the next set of actions.",
+                    "type": "string[]",
+                    "required": true
+                },
+                "goal": {
+                    "description": "The end goal of the build system.",
+                    "type": "string[]",
+                    "required": true
+                },
+                "examples": {
+                    "description": "Example actions to model the response after.",
+                    "type": "example[]",
+                    "required": true
+                },
+                "detail": {
+                    "description": "Detail data to use when generating the response.",
+                    "type": "object",
+                    "properties": {
+                        "stack": {
+                            "description": "The tech-stack that the build system should use to reach the goal.",
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "description": "The data storage stack that the build system should use to reach the goal.",
+                                    "type": "string",
+                                    "format": "comma delimetered list",
+                                    "required": true
+                                },
+                                "backend": {
+                                    "description": "The backend stack that the build system should use to reach the goal.",
+                                    "type": "string",
+                                    "format": "comma delimetered list",
+                                    "required": true
+                                },
+                                "frontend": {
+                                    "description": "The frontend stack that the build system should use to reach the goal.",
+                                    "type": "string",
+                                    "format": "comma delimetered list",
+                                    "required": true
+                                }
+                            }
+                        },
+                        "exampleCode": {
+                            "description": "Example code that demonstrates the coding style and structure that should be used.",
+                            "type": "object",
+                            "required": true
+                        },
+                        "assets": {
+                            "description": "Any assets that have been created to help reach the goal. Keyed by the asset path, which is relative to the project root or an npm path.",
+                            "type": "Record<string, string>",
+                            "required": true
+                        }
+                    }
+                },
+                "history": {
+                    "description": "The history of actions taken to get to the current state.",
+                    "type": "action[]",
+                    "required": true
+                }
+            }
+        },
+        "response": {
+            "description": "The next set of actions to take to move toward the goal.",
+            "type": "action[]",
+            "required": true
+        }
+    },
+    "instructions": [
+        "We are starting the project from scratch and only have node and npm installed.",
+        "The current working directory is the root of the project.",
+        "If one action is dependent on another, make sure to run the dependent action first; wait until the next round to run the remaining action(s).",
+        "The schema property describes the JSON structure of the request and response; use it to understand the input and craft appropriate output.",
+        "Output only a JSON array of actions with no surrounding object or additional keys. The output must start with [ and end with ].",
+        "Consider the tech-stack and exampleCode provided in the details property.",
+        "Think internally about what are then next steps to moved closer to the goal.",
+        "Use the example actions to understand what actions you can take.",
+        "Use the think action to give yourself information for the next round.",
+        "Use the history to understand the actions taken to get to the current state.",
+        "Use the assets to understand what has been created to help reach the goal.",
+        "Create and update tests regularly for the code as you go; this will give you insights on how to proceed.",
+        "When the actionType is 'run-command' the command text will be executed in a bash shell.",
+        "Use Linux bash commands to build the project, executing commands like apt install, npm install, ls, mv, rm, echo, sed, and more.",
+        "Include the path to the file that the action will be performed on; files only. It should be the path of the file at the end of the action so we can reload the file.",
+        "Don't assume the command was successful, wait for the net round to see the results in the action's commandResult property.",
+        "Use the commandResult property in the history to understand what happened when the command was run. This will help you understand the state of the project."
+    ],
+    "goal": [],
+    "examples": [
+        {
+            "actionType": "run-command",
+            "command": "npm install neo4j",
+            "description": "Install the neo4j database npm package.",
+            "reasoning": "The neo4j database will be used to store the chess game data.",
+            "commandResult": "stdout:\n"
+        },
+        {
+            "actionType": "run-command",
+            "path": "src/components/ChessGame.tsx",
+            "command": "echo -e \"import React from 'react';\n\nconst ChessGame = () => {\n    return (\n        <div>\n            Chess Game\n        </div>\n    );\n};\" >> ./src/components/ChessGame.tsx",
+            "description": "Run a command to create the ChessGame component.",
+            "reasoning": "The ChessGame component will be a new component that will be used to display the chess game.",
+            "commandResult": "stderr:bash: ./src/components/ChessGame.tsx: No such file or directory"
+        },
+        {
+            "actionType": "run-command",
+            "path": "src/components/ChessGame.tsx",
+            "command": "mv ./src/components/ChessGame.tsx ./src/components/ChessGame/ChessGame.tsx",
+            "description": "Run a command to move the ChessGame component file to it's own folder.",
+            "reasoning": "The ChessGame component will be moved to it's own folder to keep the project organized.",
+            "commandResult": "stdout:\n"
+        },
+        {
+            "actionType": "run-command",
+            "path": "src/components/ChessGame.tsx",
+            "command": "rm ./src/components/ChessGame.tsx",
+            "description": "Run a command to remove the original ChessGame component file.",
+            "reasoning": "The ChessGame component has been moved to it's own folder and the original file is no longer needed.",
+            "commandResult": "stdout:\n"
+        },
+        {
+            "actionType": "run-command",
+            "path": "src/components/ChessGame/ChessGame.tsx",
+            "command": "echo -e \"\\n\\nexport default ChessGame;\" >> ./src/components/ChessGame/ChessGame.jsx",
+            "description": "Run a command to append the export statement to the ChessGame component file.",
+            "reasoning": "The export statement is needed to export the ChessGame component.",
+            "commandResult": "stdout:\n"
+        },
+        {
+            "actionType": "run-command",
+            "path": "src/components/ChessGame/ChessGame.tsx",
+            "parameter": "src/components/ChessGame/ChessGame.jsx",
+            "command": "sed -i \"1i import './ChessGame.scss';\" ./src/components/ChessGame/ChessGame.jsx",
+            "description": "Run a sed command to insert the import statement for the ChessGame.scss file.",
+            "reasoning": "The import statement is needed to include the ChessGame.scss file in the ChessGame component.",
+            "commandResult": "stdout:\n"
+        },
+        {
+            "actionType": "run-command",
+            "path": "src/components/ChessGame/ChessGame.tsx",
+            "command": "sed -E 's/(<div>)[[:space:]]*Chess Game[[:space:]]*(<\\/div>)/\\1\\2/' ./src/components/ChessGame/ChessGame.jsx",
+            "description": "Run a sed command to remove the text 'Chess Game' from inside the div.",
+            "reasoning": "The text was a placeholder and is no longer needed.",
+            "commandResult": "stdout:\n"
+        },
+        {
+            "actionType": "run-command",
+            "command": "npm run tsc",
+            "description": "Run the TypeScript compiler to check for any issues.",
+            "reasoning": "The TypeScript compiler will check for any issues in the code.",
+            "commandResult": "stdout:\n"
+        },
+        {
+            "actionType": "run-command",
+            "command": "npm run dev",
+            "description": "Run the development server to test the ChessGame component.",
+            "reasoning": "The development server will allow you to test the ChessGame project.",
+            "commandResult": "stdout:\n"
+        },
+        {
+            "actionType": "run-command",
+            "command": "npm run test",
+            "description": "Run the test suite to check for any issues.",
+            "reasoning": "The test suite will check for any issues in the code and tell me if anything is wrong.",
+            "commandResult": "stdout:\n"
+        },
+        {
+            "actionType": "run-command",
+            "command": "apt install neo4j",
+            "description": "Install neo4j database.",
+            "reasoning": "The neo4j database will be used to store the chess game data.",
+            "commandResult": "stdout:\n"
+        },
+        {
+            "actionType": "run-command",
+            "command": "ls -al ./src",
+            "description": "List all files in the src directory.",
+            "reasoning": "List all files in the src directory to see what files are there.",
+            "commandResult": "stdout:total 15\ndrwxr-xr-x 1 Rodger 197121    0 Mar 21 18:31 ./\ndrwxr-xr-x 1 Rodger 197121    0 Mar 20 18:42 ../\n-rw-r--r-- 1 Rodger 197121  183 Mar  2 17:32 .env\ndrwxr-xr-x 1 Rodger 197121    0 Mar 21 17:53 node_modules/\n-rw-r--r-- 1 Rodger 197121 3130 Mar 21 17:53 package-lock.json\n-rw-r--r-- 1 Rodger 197121  520 Mar  8 10:41 package.json\ndrwxr-xr-x 1 Rodger 197121    0 Mar 21 18:21 projects/\ndrwxr-xr-x 1 Rodger 197121    0 Mar 21 17:40 prompts/\ndrwxr-xr-x 1 Rodger 197121    0 Mar 21 17:25 src/\n-rw-r--r-- 1 Rodger 197121    0 Mar 21 18:31 test\n-rw-r--r-- 1 Rodger 197121  435 Mar  5 20:16 tsconfig.json"
+        },
+        {
+            "actionType": "think",
+            "cognition": "I need to create a new component that we'll use to display the chess pieces on the board.",
+            "description": "Think about creating a new component for the chess pieces.",
+            "reasoning": "The chess pieces will be displayed on the board and need their own component."
+        }
+    ],
+    "details": {
+        "stack": {
+            "data": "neo4j",
+            "backend": "node, express, typescript",
+            "frontend": "vite, react, typescript, sass, fontawesome"
+        },
+        "exampleCode": {},
+        "assets": {}
+    },
+    "history": []
+}

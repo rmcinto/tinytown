@@ -1,19 +1,21 @@
 import { InventoryItem } from "./Character";
-import { MapObject } from "./Map";
+import { MapObject, MapData } from "./Map";
 
 export interface Action {
     npcId: string;
-    action: "move" | "talk" | "take" | "give" | "make";
+    mapId: string;
+    action: "move" | "talk" | "take" | "give" | "make" | "interact" | "wait";
     parameters: ActionParameters;
     reasoning: string;
-    mapUpdates?: Record<string, MapUpdate>; // Optional: Updates to the map following an action.
-    inventoryUpdates?: { [npcId: string]: Record<string, InventoryItem> }; // Optional: Updates to one or more NPC inventories.
+    mapUpdates?: Record<string, MapUpdateItem>; // Optional: Updates to the map following an action.
+    inventoryUpdates?: { [npcId: string]: Record<string, InventoryItem> }; //Optional: Updates to one or more NPC inventories.
+    newMaps?: Record<string, MapData> // Optional: New maps to be added to the game.
     error?: string | Error;
 }
 
 // ActionParameters is a union of all possible parameter types.
 export type ActionParameters =
-    MoveParameters | TalkParameters | TakeParameters | GiveParameters | MakeParameters;
+    MoveParameters | TalkParameters | TakeParameters | GiveParameters | MakeParameters | InteractParameters;
 
 export interface MoveParameters {
     origin: [number, number];
@@ -40,6 +42,11 @@ export interface MakeParameters {
     make: ArtifactInstance
 }
 
+export interface InteractParameters {
+    interaction: string;
+    effect: string;
+}
+
 // ArtifactInstance represents an artifact when used as a parameter in actions.
 export interface ArtifactInstance {
     artifactId: string;
@@ -48,7 +55,9 @@ export interface ArtifactInstance {
     position?: [number, number]; // Optional position if the artifact is on the map.
 }
 
-// MapUpdate represents changes to the map resulting from an action.
-export interface MapUpdate extends MapObject {
+// MapUpdateAction represents changes to the map resulting from an action.
+export interface MapUpdateItem extends MapObject {
     remove?: boolean; // If true, the object should be removed from the map.
 }
+
+export type MapUpdate = Record<string, MapUpdateItem>;

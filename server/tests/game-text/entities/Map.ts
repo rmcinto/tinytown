@@ -1,4 +1,5 @@
 export interface MapData {
+    mapId: string;
     map_size: [number, number];
     objects: Record<string, MapObject>;
 }

@@ -1,352 +1,429 @@
 {
-    "instructions": [
+    "gameInstructions": {
+      "instructions": [
         "We are going to play a game called Tiny Town, where the NPCs run the game.",
-        "For each NPC's turn you will be provided the games backstory a map that identifies the positions of the NPCs, buildings and artifacts, and finally the NPC's profile, summarized past contexts, current context and interactions with other NPCs.",
-        "Use the properties property in this JSON to understand the rest of the JSON properties."
-    ],
-    "properties": {
-        "backstory": "The backstory of the game.",
-        "goal": "The goal of each NPC.",
-        "rules": "Rules that must be follwed by the NPCs.",
-        "exampleActionResponses": "A list of example action responses from an NPC. Use this to understand actions.",
-        "map": "The game's map configuration with the location of NPCs, buildings and artifactrs.",
-        "players": "A simplified list of game players to provide context.",
-        "character": "The NPC's character data that will be responding, including the profile, history, context and interactions with other NPCs"
+        "For each NPC's turn, you will be provided with the game state's backstory, a map that identifies the positions of NPCs, buildings, artifacts, and interactables, and the character NPC's data including profile, history (summarized past actions as text), current context (recent actions as a list of actions), and interactions with other NPCs (as a list of actions from interacting NPCs).",
+        "Your response must be a JSON array of action objects. Each action object must have the key: action, parameters, mapUpdates, inventoryUpdates, newMaps, actionId, turnNumber, timestamp, and optionally debugInfo.",
+        "Allowed actions are: 'make', 'move', 'talk', 'take', 'interact', 'give', and 'wait'.",
+        "Every change (map, inventory, or discovery of a new map) must be included under the appropriate key.",
+        "Ensure that IDs are unique and consistent.",
+        "If no valid action is available, respond with a default 'wait' action.",
+        "IMPORTANT: When specifying newMaps, you must provide a complete new map definition (with keys: mapId, map_size, and objects) only if the target map does not already exist in the gameState. If the target map already exists, do NOT include a newMaps entry—instead, update the existing map using the mapUpdates key."
+      ],
+      "outputSchema": {
+        "actionId": "string (unique identifier)",
+        "action": "string (allowed: 'make', 'move', 'talk', 'take', 'interact', 'give', 'wait')",
+        "npcId": "string (unique identifier)",
+        "turnNumber": "integer",
+        "parameters": "object",
+        "mapUpdates": "object",
+        "inventoryUpdates": "object",
+        "newMaps": "object (if the target map does not exist in the gameState; otherwise, do not include)",
+        "reasoning": "string",
+        "timestamp": "string (ISO 8601 format)"
+      }
     },
-    "backstory": [
+    "properties": {
+      "backstory": "The backstory of the game.",
+      "goal": "The goal of each NPC.",
+      "rules": "Rules that must be followed by the NPCs.",
+      "maps": "A list of the game’s map configurations.",
+      "players": "A list of game players to provide context.",
+      "character": "The character NPC data for the current turn."
+    },
+    "gameState": {
+      "backstory": [
         "Welcome to Gearspring, a smog-covered village where brass gears turn, steam hisses, and fortune favors the clever. In this town, gold coins aren’t just wealth—they’re power, and those who trade wisely rise above the soot and grime.",
         "In Gearspring, gold makes the gears turn—and your fortune is waiting.",
-        "We have a workshop you can create widgets in, an inventors lab where you can do research, and a marketplace to buy, sell, trade anything."
-    ],
-    "goal": [
+        "We have a workshop to create widgets, an inventor's lab for research, and a marketplace to buy, sell, or trade anything."
+      ],
+      "goal": [
         "Earn, trade, and thrive! Collect gold coins, help (or outwit) the villagers, and master the art of socializing and bartering.",
         "Will you become a respected trader, an ingenious inventor, or a cunning hustler?"
-    ],
-    "rules": [
-        "Your response will be the NPC's next set of actions, encoded in JSON; make, move, talk, take, or give.",
-        "Artifacts can not be on the same coordinate as another artifact, a building or an NPC.",
-        "An NPC can not be on the same coordinate as an artifact",
-        "An NPC can not be on the same coordinate as another NPC, unless they are in a building.",
-        "An NPC can see in 360 degrees but only 4 tiles away from them.",
+      ],
+      "rules": [
+        "Artifacts cannot be on the same coordinate as another artifact, a building, or an NPC.",
+        "NPCs cannot be on the same coordinate as an artifact, another NPC, an interactable, or a building.",
+        "Interactables cannot share a coordinate with an artifact, an NPC, another interactable, or a building.",
+        "NPCs have 360-degree vision but can only see up to 4 tiles away.",
+        "An NPC can 'give' an artifact to another NPC only if they are within 1 tile of each other.",
+        "An NPC can only 'give' an artifact that is in their inventory, and only if the receiving NPC responds with a 'take' action (they can also refuse).",
         "An NPC can 'take' an artifact from the map by being within 1 tile of it.",
-        "An NPC can 'take' an artifact from another NPC after a 'give' action from that NPC; they can also refuse to take it.",
-        "An NPC can 'talk' with an NPC within 1 tile, to start a conversation, or to continue one.",
-        "An NPC can 'move' horizontally, vertically, or diagonally, to a destination using the tile coordinate system.",
-        "When moving, no need create a route, choose the destination and the NPC will get there",
-        "When picking coordinates to 'move', remember that longer distances take more time, and NPCs could miss things on the way.",
-        "An NPC can only 'give' an artifact that's in their inventory, and only if the receiving NPC is within 1 tile and responds with a 'take' action.",
-        "If a change is made that effects the map, include those changes in the action.",
-        "If there are changes that effect inventories, include those changes in the action.",
-        "NPCs only know what's in their inventory unless the artifact is marked visible: true.",
-        "An NPC can make things with artifacts in their inventory, using up the artifacts and creating a new one, which will modify the NPCs inventory, but it must happen in the workshop.",
-        "Include map updates when new buildings are discovered; include a single, utf8 character 'symbol' that is appropriate for the type of building.",
-        "Include map updates when new artifacts are discovered, it must be added to the map before the NPC can 'take' it; include a single, utf8 character 'symbol' that is appropriate for the type of building.",
-        "When working together, NPCs can join a party to move all as one, using the symbol P; consolidating them into one tile on the map."
-    ],
-    "exampleActionResponses": [
+        "An NPC can 'take' an artifact from another NPC following a 'give' action; they can also refuse.",
+        "NPCs can 'talk' with another NPC within 1 tile to start or continue a conversation.",
+        "NPCs can also talk to no one, yell out, or talk to themselves.",
+        "NPCs can 'move' horizontally, vertically, or diagonally to a destination specified by tile coordinates.",
+        "When executing a 'move' action, simply specify the destination; the route need not be detailed.",
+        "If a 'move' action brings an NPC to the coordinates of a building, they will enter the building. Include a mapUpdate to remove the NPC from the outdoor map and add them to the building’s map.",
+        "If an NPC is inside a building, they can 'move' to the door to exit. Include a mapUpdate to remove them from the building’s map and add them to the outdoor map.",
+        "If a 'move' action takes an NPC to a map that does not yet exist, include a newMap entry with the 'map_size' and the initial objects for that map; include many appropriate artifacts and interactibles.",
+        "NPCs can discover new maps when they are at the edge of their current map; include a newMap with appropriate artifacts, interactables, and buildings.",
+        "An NPC can 'interact' with interactibles, but only if it is within 1 tile of the interactible.",
+        "All changes affecting the map must be included in 'mapUpdates'.",
+        "All changes affecting inventories must be included in 'inventoryUpdates'.",
+        "Any new maps discovered must be included in 'newMaps'.",
+        "When creating a newMap entry for a building, analyze the building's name and any available description to determine its likely function. Then generate a complete layout that includes at least two interactable objects and two artifacts that are thematically appropriate. If the building's type is clear (e.g., 'Workshop', 'Marketplace', 'Lab'), include items typical for that type. If the type is ambiguous, produce a generic layout with basic interactables (such as a door, a counter, or a table) and a few artifacts (like tools, decorative items, or utility objects) to make the building feel complete.",
+        "NPCs only know what is in their own inventory unless another NPC's artifact is marked with visible: true.",
+        "An NPC can 'make' new artifacts using items from their inventory while in a building that has the nessesary equipment, like a workshop or lab. This action consumes the used artifacts and creates a new one, updating the NPC's inventory accordingly.",
+        "When new buildings or artifacts are discovered, include a mapUpdate entry that uses a unique UTF-8 character 'symbol' appropriate for the type."
+      ],
+      "exampleActionResponses": [
         [
             {
-                "npcId": "npc1",
+                "actionId": "action001",
                 "action": "move",
+                "npcId": "npc1",
+                "turnNumber": 1,
                 "parameters": {
-                    "origin": [
-                        1,
-                        1
-                    ],
-                    "destination": [
-                        10,
-                        1
-                    ]
+                    "origin": [5, 12],
+                    "destination": [10, 15]
                 },
-                "reasoning": "I decided to walk to the store",
                 "mapUpdates": {
-                    "mapItem100": {
-                        "mapItemId": "mapItem100",
+                    "village": {
+                    "mapItem1": {
+                        "mapItemId": "mapItem1",
+                        "type": "npc",
+                        "npcId": "npc1",
+                        "remove": true
+                    }
+                    }
+                },
+                "inventoryUpdates": {},
+                "newMaps": {
+                    "workshop_map": {
+                    "mapId": "workshop_map",
+                    "map_size": [10, 10],
+                    "objects": {
+                        "mapItemW1": {
+                        "mapItemId": "mapItemW1",
                         "type": "npc",
                         "npcId": "npc1",
                         "symbol": "1",
-                        "position": [
-                            10,
-                            1
-                        ]
+                        "position": [5, 1]
+                        },
+                        "mapItemW2": {
+                        "mapItemId": "mapItemW2",
+                        "type": "interactable",
+                        "name": "workbench",
+                        "symbol": "B",
+                        "position": [4, 3]
+                        }
                     }
-                }
-            }
-        ],
-        [
-            {
-                "npcId": "npc1",
-                "action": "talk",
-                "parameters": {
-                    "say": "Hi! How are you doing!",
-                    "toNPCId": "npc3"
+                    }
                 },
-                "reasoning": "I want to start a conversation so I can buy their gear"
+                "reasoning": "Moving into the Workshop.",
+                "timestamp": "2025-03-14T12:00:00Z"
             }
         ],
         [
             {
+                "actionId": "action002",
+                "action": "talk",
                 "npcId": "npc3",
-                "action": "talk",
+                "turnNumber": 2,
                 "parameters": {
-                    "say": "I'm doing well, how are you?",
-                    "toNPCId": "npc1"
+                    "say": "Hello, how are you?",
+                    "toNPCId": "npc2"
                 },
-                "reasoning": "I'm answering {npc1}"
+                "mapUpdates": {},
+                "inventoryUpdates": {},
+                "newMaps": {},
+                "reasoning": "I need to talke with {npc2:name} to discuss the trade.",
+                "timestamp": "2025-03-14T12:01:00Z"
             }
         ],
         [
             {
-                "npcId": "npc1",
-                "action": "talk",
-                "parameters": {
-                    "say": "ARGGGGG",
-                    "toNPCId": null
-                },
-                "reasoning": "I had to yell out my frustration"
-            }
-        ],
-        [
-            {
-                "npcId": "npc1",
+                "actionId": "action003",
                 "action": "take",
+                "npcId": "npc1",
+                "turnNumber": 3,
                 "parameters": {
                     "fromNPCId": null,
                     "artifacts": [
-                        {
-                            "artifactId": "artifact1",
-                            "name": "gold coin",
-                            "quantity": 1,
-                            "position": [
-                                5,
-                                13
-                            ]
-                        }
+                    {
+                        "artifactId": "artifact5",
+                        "name": "gold coin",
+                        "quantity": 1,
+                        "position": [10, 10]
+                    }
                     ]
                 },
-                "reasoning": "Gold is worth something and it was just sitting there",
                 "mapUpdates": {
-                    "mapItem13": {
-                        "mapItemId": "mapItem13",
+                    "village": {
+                    "mapItem10": {
+                        "mapItemId": "mapItem10",
                         "type": "artifact",
                         "artifactId": "artifact5",
+                        "name": "gold coin",
                         "symbol": "G",
-                        "position": [
-                            5,
-                            13
-                        ],
+                        "position": [10, 10],
                         "remove": true
+                    }
                     }
                 },
                 "inventoryUpdates": {
                     "npc1": {
-                        "artifact3": {
-                            "artifactId": "artifact3",
-                            "name": "blueprint fragment",
-                            "quantity": 2
-                        }
+                    "artifact5": {
+                        "artifactId": "artifact5",
+                        "name": "gold coin",
+                        "quantity": 2
                     }
-                }
-            },
-            {
-                "npcId": "npc1",
-                "action": "give",
-                "parameters": {
-                    "toNPCId": "npc3",
-                    "artifacts": [
-                        {
-                            "artifactId": "artifact1",
-                            "name": "gold coin",
-                            "quantity": 1
-                        }
-                    ]
+                    }
                 },
-                "reasoning": "I want to buy his nifty hat"
+                "newMaps": {},
+                "reasoning": "Collecting a gold coin from the ground.",
+                "timestamp": "2025-03-14T12:02:00Z"
             }
         ],
         [
             {
-                "npcId": "npc3",
-                "action": "take",
+                "actionId": "action004",
+                "action": "give",
+                "npcId": "npc1",
+                "turnNumber": 4,
                 "parameters": {
-                    "fromNPCId": "npc1",
+                    "toNPCId": "npc3",
                     "artifacts": [
-                        {
-                            "artifactId": "artifact1",
-                            "name": "gold coin",
-                            "quantity": 1
-                        }
+                    {
+                        "artifactId": "artifact5",
+                        "name": "gold coin",
+                        "quantity": 1
+                    }
                     ]
                 },
-                "reasoning": "NPC1 wants to buy my hat",
+                "mapUpdates": {},
                 "inventoryUpdates": {
                     "npc1": {
-                        "artifact1": {
-                            "artifactId": "artifact1",
-                            "name": "gold coin",
-                            "quantity": 0
-                        }
+                    "artifact5": {
+                        "artifactId": "artifact5",
+                        "name": "gold coin",
+                        "quantity": 0
+                    }
                     },
                     "npc3": {
-                        "artifact1": {
-                            "artifactId": "artifact1",
-                            "name": "gold coin",
-                            "quantity": 6
-                        }
+                    "artifact5": {
+                        "artifactId": "artifact5",
+                        "name": "gold coin",
+                        "quantity": 11
                     }
-                }
-            },
+                    }
+                },
+                "newMaps": {},
+                "reasoning": "Trading a gold coin with {npc3:name}.",
+                "timestamp": "2025-03-14T12:03:00Z"
+            }
+        ],
+        [
             {
+                "actionId": "action005",
+                "action": "interact",
+                "npcId": "npc2",
+                "turnNumber": 5,
+                "parameters": {
+                    "mapItemId": "machine1",
+                    "interaction": "Press the red button to activate the machine.",
+                    "effect": "The machine starts humming and lights up."
+                },
+                "mapUpdates": {
+                    "factory": {
+                    "mapItem20": {
+                        "mapItemId": "mapItem20",
+                        "type": "machine",
+                        "name": "red activation machine",
+                        "symbol": "R",
+                        "position": [8, 8]
+                    }
+                    }
+                },
+                "inventoryUpdates": {},
+                "newMaps": {},
+                "reasoning": "Activating a machine to trigger a map change.",
+                "timestamp": "2025-03-14T12:04:00Z"
+            }
+        ],
+        [
+            {
+                "actionId": "action006",
+                "action": "make",
+                "npcId": "npc1",
+                "turnNumber": 6,
+                "parameters": {
+                    "use": [
+                    {
+                        "artifactId": "artifact4",
+                        "name": "cogwheel",
+                        "quantity": 2
+                    },
+                    {
+                        "artifactId": "artifact3",
+                        "name": "blueprint fragment",
+                        "quantity": 1
+                    }
+                    ],
+                    "make": {
+                    "artifactId": "artifact101",
+                    "name": "steam gadget",
+                    "quantity": 1
+                    }
+                },
+                "mapUpdates": {},
+                "inventoryUpdates": {
+                    "npc1": {
+                    "artifact4": {
+                        "artifactId": "artifact4",
+                        "name": "cogwheel",
+                        "quantity": 1
+                    },
+                    "artifact3": {
+                        "artifactId": "artifact3",
+                        "name": "blueprint fragment",
+                        "quantity": 0
+                    },
+                    "artifact101": {
+                        "artifactId": "artifact101",
+                        "name": "steam gadget",
+                        "quantity": 1
+                    }
+                    }
+                },
+                "newMaps": {},
+                "reasoning": "Crafting a steam gadget using inventory items.",
+                "timestamp": "2025-03-14T12:05:00Z"
+            }
+        ],
+        [
+            {
+                "actionId": "action007",
+                "action": "wait",
                 "npcId": "npc4",
+                "turnNumber": 7,
+                "parameters": {},
+                "mapUpdates": {},
+                "inventoryUpdates": {},
+                "newMaps": {},
+                "reasoning": "No valid action available; waiting.",
+                "timestamp": "2025-03-14T12:06:00Z"
+            }
+        ],
+        [
+            {
+                "actionId": "action008",
+                "action": "move",
+                "npcId": "npc1",
+                "turnNumber": 8,
+                "parameters": {
+                  "origin": [5, 12],
+                  "destination": [5, 1]
+                },
+                "mapUpdates": {
+                  "village": {
+                    "mapItem1": {
+                      "mapItemId": "mapItem1",
+                      "type": "npc",
+                      "npcId": "npc1",
+                      "remove": true
+                    }
+                  }
+                },
+                "inventoryUpdates": {},
+                "reasoning": "I moved closer to the marketplace",
+                "timestamp": "2025-03-14T12:00:00Z"
+            }
+        ],
+        [
+            {
+                "actionId": "action009",
                 "action": "give",
+                "npcId": "npc1",
+                "turnNumber": 9,
                 "parameters": {
                     "toNPCId": null,
                     "artifacts": [
                         {
-                            "artifactId": "artifact6",
+                            "artifactId": "artifact10",
                             "name": "rusty gear",
-                            "quantity": 1,
-                            "position": [
-                                2,
-                                4
-                            ]
+                            "quantity": 1
                         }
                     ]
                 },
-                "reasoning": "I don't want this rusty gear anymore",
-                "mapUpdates": {
-                    "mapItem12": {
-                        "mapItemId": "mapItem12",
-                        "type": "artifact",
-                        "artifactId": "artifact6",
-                        "symbol": "G",
-                        "position": [
-                            2,
-                            4
-                        ]
-                    }
-                },
+                "mapUpdates": {},
                 "inventoryUpdates": {
-                    "npc4": {
-                        "artifact6": {
-                            "artifactId": "artifact6",
+                    "npc1": {
+                        "artifact10": {
+                            "artifactId": "artifact10",
                             "name": "rusty gear",
                             "quantity": 0
                         }
                     }
-                }
-            }
-        ],
-        [
+                },
+                "newMaps": {},
+                "reasoning": "I dropped the useless rusty gear on the ground.",
+                "timestamp": "2025-03-14T12:03:00Z"
+            },
             {
-                "npcId": "npc2",
-                "action": "make",
+                "actionId": "action010",
+                "action": "talk",
+                "npcId": "npc1",
+                "turnNumber": 9,
                 "parameters": {
-                    "use": [
-                        {
-                            "artifactId": "artifact6",
-                            "name": "rusty gear",
-                            "quantity": 0
-                        },
-                        {
-                            "artifactId": "artifact8",
-                            "name": "gear spring",
-                            "quantity": 0
-                        }
-                    ],
-                    "make": {
-                        "artifactId": "artifact101",
-                        "name": "lock spring",
-                        "quantity": 1
-                    }
+                    "toNPCId": null,
+                    "sayto": "I don't need this rusty gear anymore. Maybe someone else can use it."
                 },
-                "inventoryUpdates": {
-                    "npc2": {
-                        "artifact6": {
-                            "artifactId": "artifact6",
-                            "name": "rusty gear",
-                            "quantity": 0
-                        },
-                        "artifact8": {
-                            "artifactId": "artifact8",
-                            "name": "gear spring",
-                            "quantity": 0
-                        },
-                        "artifact101": {
-                            "artifactId": "artifact101",
-                            "name": "lock spring",
-                            "quantity": 1
-                        }
-                    }
-                }
+                "mapUpdates": {},
+                "inventoryUpdates": {},
+                "newMaps": {},
+                "reasoning": "I left a message for anyone who might find the rusty gear.",
+                "timestamp": "2025-03-14T12:03:00Z"
             }
         ]
-    ],
-    "map": {
-        "map_size": [
-            20,
-            20
-        ],
-        "objects": {
+      ],
+      "maps": {
+        "village": {
+          "mapId": "village",
+          "map_size": [20, 20],
+          "objects": {
             "mapItem1": {
-                "mapItemId": "mapItem1",
-                "type": "npc",
-                "npcId": "npc1",
-                "symbol": "1",
-                "position": [
-                    5,
-                    12
-                ]
+              "mapItemId": "mapItem1",
+              "type": "npc",
+              "npcId": "npc1",
+              "symbol": "1",
+              "position": [5, 12]
             },
             "mapItem2": {
-                "mapItemId": "mapItem2",
-                "type": "npc",
-                "npcId": "npc2",
-                "symbol": "2",
-                "position": [
-                    2,
-                    6
-                ]
+              "mapItemId": "mapItem2",
+              "type": "npc",
+              "npcId": "npc2",
+              "symbol": "2",
+              "position": [2, 6]
             },
             "mapItem3": {
-                "mapItemId": "mapItem3",
-                "type": "npc",
-                "npcId": "npc3",
-                "symbol": "3",
-                "position": [
-                    2,
-                    7
-                ]
+              "mapItemId": "mapItem3",
+              "type": "npc",
+              "npcId": "npc3",
+              "symbol": "3",
+              "position": [2, 7]
             },
             "mapItem4": {
-                "mapItemId": "mapItem4",
-                "type": "npc",
-                "npcId": "npc4",
-                "symbol": "4",
-                "position": [
-                    6,
-                    6
-                ]
+              "mapItemId": "mapItem4",
+              "type": "npc",
+              "npcId": "npc4",
+              "symbol": "4",
+              "position": [6, 6]
             },
             "mapItem5": {
-                "mapItemId": "mapItem5",
-                "type": "building",
-                "name": "Workshop",
-                "symbol": "W",
-                "position": [
-                    10,
-                    15
-                ]
+              "mapItemId": "mapItem5",
+              "type": "building",
+              "name": "Workshop",
+              "symbol": "W",
+              "position": [10, 15]
             },
             "mapItem6": {
-                "mapItemId": "mapItem6",
-                "type": "building",
-                "name": "Marketplace",
-                "symbol": "M",
-                "position": [
-                    20,
-                    15
-                ]
+              "mapItemId": "mapItem6",
+              "type": "building",
+              "name": "Marketplace",
+              "symbol": "M",
+              "position": [20, 15]
             },
             "mapItem7": {
                 "mapItemId": "mapItem7",
@@ -402,7 +479,10 @@
                     13
                 ]
             }
+          }
         }
-    },
-    "players": []
-}
+      },
+      "players": [
+      ]
+    }
+}  
