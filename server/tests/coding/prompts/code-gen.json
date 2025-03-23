@@ -46,10 +46,17 @@
                     "type": "string",
                     "required": true
                 },
-                "commandResult": {
-                    "description": "The result of the command that was run.",
-                    "type": "string",
-                    "required": "true when the actionType is 'run-command'"
+                "processId": {
+                    "description": "The PID of the running child process, if this is a run-command action.",
+                    "type": "number"
+                },
+                "stdout": {
+                    "description": "Captured standard output from the command.",
+                    "type": "string"
+                },
+                "stderr": {
+                    "description": "Captured error output from the command.",
+                    "type": "string"
                 }
             }
         },
@@ -76,7 +83,7 @@
                     "type": "example[]",
                     "required": true
                 },
-                "detail": {
+                "details": {
                     "description": "Detail data to use when generating the response.",
                     "type": "object",
                     "properties": {
@@ -146,7 +153,8 @@
         "Use Linux bash commands to build the project, executing commands like apt install, npm install, ls, mv, rm, echo, sed, and more.",
         "Include the path to the file that the action will be performed on; files only. It should be the path of the file at the end of the action so we can reload the file.",
         "Don't assume the command was successful, wait for the net round to see the results in the action's commandResult property.",
-        "Use the commandResult property in the history to understand what happened when the command was run. This will help you understand the state of the project."
+        "Use the commandResult property in the history to understand what happened when the command was run. This will help you understand the state of the project.",
+        "If a command starts a process that stays open, then you must kill that process when you no longer need it."
     ],
     "goal": [],
     "examples": [
@@ -155,7 +163,9 @@
             "command": "npm install neo4j",
             "description": "Install the neo4j database npm package.",
             "reasoning": "The neo4j database will be used to store the chess game data.",
-            "commandResult": "stdout:\n"
+            "stdout": "",
+            "stderr": "",
+            "processId": 0
         },
         {
             "actionType": "run-command",
@@ -163,7 +173,9 @@
             "command": "echo -e \"import React from 'react';\n\nconst ChessGame = () => {\n    return (\n        <div>\n            Chess Game\n        </div>\n    );\n};\" >> ./src/components/ChessGame.tsx",
             "description": "Run a command to create the ChessGame component.",
             "reasoning": "The ChessGame component will be a new component that will be used to display the chess game.",
-            "commandResult": "stderr:bash: ./src/components/ChessGame.tsx: No such file or directory"
+            "stdout": "",
+            "stderr": "",
+            "processId": 0
         },
         {
             "actionType": "run-command",
@@ -171,7 +183,9 @@
             "command": "mv ./src/components/ChessGame.tsx ./src/components/ChessGame/ChessGame.tsx",
             "description": "Run a command to move the ChessGame component file to it's own folder.",
             "reasoning": "The ChessGame component will be moved to it's own folder to keep the project organized.",
-            "commandResult": "stdout:\n"
+            "stdout": "",
+            "stderr": "",
+            "processId": 0
         },
         {
             "actionType": "run-command",
@@ -179,7 +193,9 @@
             "command": "rm ./src/components/ChessGame.tsx",
             "description": "Run a command to remove the original ChessGame component file.",
             "reasoning": "The ChessGame component has been moved to it's own folder and the original file is no longer needed.",
-            "commandResult": "stdout:\n"
+            "stdout": "",
+            "stderr": "",
+            "processId": 0
         },
         {
             "actionType": "run-command",
@@ -187,7 +203,9 @@
             "command": "echo -e \"\\n\\nexport default ChessGame;\" >> ./src/components/ChessGame/ChessGame.jsx",
             "description": "Run a command to append the export statement to the ChessGame component file.",
             "reasoning": "The export statement is needed to export the ChessGame component.",
-            "commandResult": "stdout:\n"
+            "stdout": "",
+            "stderr": "",
+            "processId": 0
         },
         {
             "actionType": "run-command",
@@ -196,7 +214,9 @@
             "command": "sed -i \"1i import './ChessGame.scss';\" ./src/components/ChessGame/ChessGame.jsx",
             "description": "Run a sed command to insert the import statement for the ChessGame.scss file.",
             "reasoning": "The import statement is needed to include the ChessGame.scss file in the ChessGame component.",
-            "commandResult": "stdout:\n"
+            "stdout": "",
+            "stderr": "",
+            "processId": 0
         },
         {
             "actionType": "run-command",
@@ -204,42 +224,54 @@
             "command": "sed -E 's/(<div>)[[:space:]]*Chess Game[[:space:]]*(<\\/div>)/\\1\\2/' ./src/components/ChessGame/ChessGame.jsx",
             "description": "Run a sed command to remove the text 'Chess Game' from inside the div.",
             "reasoning": "The text was a placeholder and is no longer needed.",
-            "commandResult": "stdout:\n"
+            "stdout": "",
+            "stderr": "",
+            "processId": 0
         },
         {
             "actionType": "run-command",
             "command": "npm run tsc",
             "description": "Run the TypeScript compiler to check for any issues.",
             "reasoning": "The TypeScript compiler will check for any issues in the code.",
-            "commandResult": "stdout:\n"
+            "stdout": "",
+            "stderr": "",
+            "processId": 0
         },
         {
             "actionType": "run-command",
             "command": "npm run dev",
             "description": "Run the development server to test the ChessGame component.",
             "reasoning": "The development server will allow you to test the ChessGame project.",
-            "commandResult": "stdout:\n"
+            "stdout": "",
+            "stderr": "",
+            "processId": 0
         },
         {
             "actionType": "run-command",
             "command": "npm run test",
             "description": "Run the test suite to check for any issues.",
             "reasoning": "The test suite will check for any issues in the code and tell me if anything is wrong.",
-            "commandResult": "stdout:\n"
+            "stdout": "",
+            "stderr": "",
+            "processId": 0
         },
         {
             "actionType": "run-command",
             "command": "apt install neo4j",
             "description": "Install neo4j database.",
             "reasoning": "The neo4j database will be used to store the chess game data.",
-            "commandResult": "stdout:\n"
+            "stdout": "",
+            "stderr": "",
+            "processId": 0
         },
         {
             "actionType": "run-command",
             "command": "ls -al ./src",
             "description": "List all files in the src directory.",
             "reasoning": "List all files in the src directory to see what files are there.",
-            "commandResult": "stdout:total 15\ndrwxr-xr-x 1 Rodger 197121    0 Mar 21 18:31 ./\ndrwxr-xr-x 1 Rodger 197121    0 Mar 20 18:42 ../\n-rw-r--r-- 1 Rodger 197121  183 Mar  2 17:32 .env\ndrwxr-xr-x 1 Rodger 197121    0 Mar 21 17:53 node_modules/\n-rw-r--r-- 1 Rodger 197121 3130 Mar 21 17:53 package-lock.json\n-rw-r--r-- 1 Rodger 197121  520 Mar  8 10:41 package.json\ndrwxr-xr-x 1 Rodger 197121    0 Mar 21 18:21 projects/\ndrwxr-xr-x 1 Rodger 197121    0 Mar 21 17:40 prompts/\ndrwxr-xr-x 1 Rodger 197121    0 Mar 21 17:25 src/\n-rw-r--r-- 1 Rodger 197121    0 Mar 21 18:31 test\n-rw-r--r-- 1 Rodger 197121  435 Mar  5 20:16 tsconfig.json"
+            "stdout": "total 15\ndrwxr-xr-x 1 Rodger 197121    0 Mar 21 18:31 ./\ndrwxr-xr-x 1 Rodger 197121    0 Mar 20 18:42 ../\n-rw-r--r-- 1 Rodger 197121  183 Mar  2 17:32 .env\ndrwxr-xr-x 1 Rodger 197121    0 Mar 21 17:53 node_modules/\n-rw-r--r-- 1 Rodger 197121 3130 Mar 21 17:53 package-lock.json\n-rw-r--r-- 1 Rodger 197121  520 Mar  8 10:41 package.json\ndrwxr-xr-x 1 Rodger 197121    0 Mar 21 18:21 projects/\ndrwxr-xr-x 1 Rodger 197121    0 Mar 21 17:40 prompts/\ndrwxr-xr-x 1 Rodger 197121    0 Mar 21 17:25 src/\n-rw-r--r-- 1 Rodger 197121    0 Mar 21 18:31 test\n-rw-r--r-- 1 Rodger 197121  435 Mar  5 20:16 tsconfig.json",
+            "stderr": "",
+            "processId": 0
         },
         {
             "actionType": "think",

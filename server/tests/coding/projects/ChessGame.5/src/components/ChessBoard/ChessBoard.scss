@@ -1,0 +1,36 @@
+.chess-board {
+  display: flex;
+  flex-direction: column;
+  width: 400px;
+  height: 400px;
+  border: 2px solid #333;
+}
+
+.board-row {
+  display: flex;
+  flex: 1;
+}
+
+.board-cell {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.board-cell.light {
+  background-color: #eeeed2;
+}
+
+.board-cell.dark {
+  background-color: #769656;
+}
+
+.board-cell:hover {
+  outline: 2px solid #f00;
+}
+
+.board-cell.selected {
+  border: 2px solid blue;
+}

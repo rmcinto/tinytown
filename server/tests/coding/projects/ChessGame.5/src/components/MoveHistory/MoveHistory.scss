@@ -1,0 +1,26 @@
+.move-history {
+  margin-top: 1rem;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  background-color: #f9f9f9;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.move-history h3 {
+  margin-top: 0;
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+.move-history ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.move-history li {
+  font-size: 0.9rem;
+  padding: 0.2rem 0;
+  border-bottom: 1px solid #eee;
+}
