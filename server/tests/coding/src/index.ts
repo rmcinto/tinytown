@@ -6,38 +6,44 @@ import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 
+// --------------------------------------------------------------------
+// Interfaces & Types
+// --------------------------------------------------------------------
+
 // We store each log entry as { type: "request" | "response", data: ... }
 interface LogEntry {
     type: "request" | "response";
     data: any; // "data" can contain the request, the response, or both
 }
 
-// In-memory array of log entries for this run.
+// Local log array for this run
 let roundLogs: LogEntry[] = [];
 
 // The current request awaiting a response (if any)
 let currentRoundRequest: Request | null = null;
 
-// The path to the current run’s log file.
+// Path to the log file for this run
 let logFilePath: string = "";
 
-// Example: "MyProjectName"
+// For example, "MyProject"
 let currentProjectName = "default";
 
-// Keep track of running child processes so we can manage or terminate them later if needed.
+// Track child processes so we can kill them or track them
 const childProcesses: Record<string, ChildProcessWithoutNullStreams> = {};
 
-// Create the logs folder if it doesn’t exist.
+// Ensure we have a logs folder
 if (!fs.existsSync('./logs')) {
     fs.mkdirSync('./logs', { recursive: true });
 }
 
-// Write the in-memory roundLogs to disk.
+// Write the in-memory roundLogs to disk
 function writeLogsToFile() {
     fs.writeFileSync(logFilePath, JSON.stringify(roundLogs, null, 2));
 }
 
-// Define interfaces from the code-gen JSON schema
+// ---------------
+// Code-Gen JSON Schema
+// ---------------
 
 // Base type for actions
 interface BaseAction {
@@ -46,22 +52,16 @@ interface BaseAction {
     reasoning: string;
 }
 
-// Action when a command needs to be executed
+// Action for commands
 interface RunCommandAction extends BaseAction {
     actionType: "run-command";
     command: string;
     path?: string;
     parameter?: string;
-
-    // We add fields for separate stdout & stderr logs
-    stdout?: string;
-    stderr?: string;
-
-    // We add a processId so we can reference or kill it later
-    processId?: number;
+    processId?: number; // Keep track if it's still running
 }
 
-// Action when the system should "think" (i.e. process cognition)
+// Action for "think"
 interface ThinkAction extends BaseAction {
     actionType: "think";
     cognition: string;
@@ -69,7 +69,20 @@ interface ThinkAction extends BaseAction {
 
 type Action = RunCommandAction | ThinkAction;
 
-// Interface for the request sent to the WebSocket service.
+/**
+ * We define a type for tracking live console processes.
+ * This is stored in codeGenPrompt.details.consoleEntries.
+ */
+interface ConsoleEntry {
+    processId: number;
+    command: string;
+    stdout: string;
+    stderr: string;
+    startTime: string;
+    endTime?: string;
+}
+
+// The request object from code-gen JSON schema
 interface Request {
     instructions: string[];
     goal: string[];
@@ -82,12 +95,15 @@ interface Request {
         };
         exampleCode: any;
         assets: Record<string, string>;
+
+        // Add consoleEntries to track running processes
+        consoleEntries?: Record<string, ConsoleEntry>;
     };
     history: Action[];
     id: string;
 }
 
-// Interface for the structure of code-gen prompt JSON.
+// codeGenPrompt JSON structure
 interface CodeGenPrompt {
     preamble: string[];
     schema: any;
@@ -102,11 +118,14 @@ interface CodeGenPrompt {
         };
         exampleCode: any;
         assets: Record<string, string>;
+
+        // Add consoleEntries here as well
+        consoleEntries?: Record<string, ConsoleEntry>;
     };
     history: Action[];
 }
 
-// Summaries for old actions, same logic as before
+// Summarize older actions, ignoring any run-command that still has a processId
 function summarizeActions(actions: Action[]): ThinkAction {
     let runCommandCount = 0;
     let thinkCount = 0;
@@ -128,20 +147,38 @@ function summarizeActions(actions: Action[]): ThinkAction {
 }
 
 /**
- * Attempts to keep the entire request object under a certain size threshold
- * by summarizing older history actions if needed.
+ * We keep the request under a certain size. If it's too large,
+ * we remove older actions (except any with processId != undefined).
  */
 function ensureRequestSizeLimit(request: Request, sizeLimit = 15000): Request {
     let requestStr = JSON.stringify(request);
     if (requestStr.length <= sizeLimit) {
         return request;
     }
+
+    // We'll keep the last 20 actions in detail.
+    // Summarize older ones that do NOT have a processId.
     const keepCount = 20;
-    if (request.history.length > keepCount) {
-        const olderActions = request.history.slice(0, request.history.length - keepCount);
-        const summaryAction = summarizeActions(olderActions);
-        const newHistory = [summaryAction, ...request.history.slice(-keepCount)];
-        request.history = newHistory;
+
+    // Separate actions that are 'in-progress' from others
+    const inProgress = request.history.filter(
+        (a) => a.actionType === 'run-command' && (a as RunCommandAction).processId
+    );
+    const doneActions = request.history.filter(
+        (a) => !(a.actionType === 'run-command' && (a as RunCommandAction).processId)
+    );
+
+    // Summarize older doneActions beyond keepCount
+    if (doneActions.length > keepCount) {
+        const olderSegment = doneActions.slice(0, doneActions.length - keepCount);
+        const remain = doneActions.slice(-keepCount);
+        const summary = summarizeActions(olderSegment);
+        // Rebuild history => in-progress + remain + summary
+        // We'll put summary at front for convenience
+        request.history = [summary, ...remain, ...inProgress];
+    } else {
+        // Just re-append them in the right order
+        request.history = [...doneActions, ...inProgress];
     }
 
     requestStr = JSON.stringify(request);
@@ -151,10 +188,8 @@ function ensureRequestSizeLimit(request: Request, sizeLimit = 15000): Request {
     return request;
 }
 
-// Global round counter
+// Round counter & WebSocket
 let roundCounter = 0;
-
-// WebSocket reference
 let ws: WebSocket | undefined;
 
 // Setup readline
@@ -163,73 +198,90 @@ const rl = readline.createInterface({
     output: process.stdout,
 });
 
-// Utility to ask a question
+// Ask a question from the CLI
 function askQuestion(query: string): Promise<string> {
-    return new Promise(resolve => {
-        rl.question(query, answer => resolve(answer));
+    return new Promise((resolve) => {
+        rl.question(query, (answer) => resolve(answer));
     });
 }
 
 /**
- * Spawns a child process via WSL's bash, passing the entire command
- * as a single argument to `bash -c`.
- *
- * - We record the child's PID in the action's processId so it can be killed later.
- * - We store stdout data in action.stdout, stderr in action.stderr.
- * - If action.path points to a file, we read that file after the process closes.
+ * Spawns a child process. We'll:
+ * 1) Add a console entry in codeGenPrompt.details.consoleEntries to track stdout/stderr
+ * 2) Clear processId upon exit
+ * 3) Summarize the console entry and push it to codeGenPrompt.history
+ * 4) Remove from consoleEntries
  */
 function spawnProcess(
     action: RunCommandAction,
     projectPath: string,
-    codeGenPrompt: CodeGenPrompt
+    codeGen: CodeGenPrompt
 ) {
-    // Identify this process uniquely
-    const processKey = `${action.command}-${Date.now()}`;
+    // Ensure consoleEntries is defined
+    if (!codeGen.details.consoleEntries) {
+        codeGen.details.consoleEntries = {};
+    }
 
-    // Create the child process
+    const consoleKey = `${action.command}-${Date.now()}`;
     const child = spawn('wsl', ['bash', '-c', action.command], {
         cwd: projectPath,
         shell: false
     });
 
-    // Save child in a global record so we can kill it if needed
-    childProcesses[processKey] = child;
-
-    // Record the child PID on the action
+    childProcesses[consoleKey] = child;
     action.processId = child.pid;
 
-    // Initialize stdout/stderr
-    action.stdout = "";
-    action.stderr = "";
+    // Create a console entry
+    codeGen.details.consoleEntries[consoleKey] = {
+        processId: child.pid || 0,
+        command: action.command,
+        stdout: "",
+        stderr: "",
+        startTime: new Date().toISOString()
+    };
+    const entry = codeGen.details.consoleEntries[consoleKey];
 
-    // Capture real-time stdout (append to action.stdout)
+    // Capture stdout/stderr
     child.stdout.setEncoding('utf-8');
     child.stdout.on('data', (data: string) => {
-        action.stdout += data;
+        entry.stdout += data;
     });
-
-    // Capture real-time stderr (append to action.stderr)
     child.stderr.setEncoding('utf-8');
     child.stderr.on('data', (data: string) => {
-        action.stderr += data;
+        entry.stderr += data;
     });
 
-    // On process close, remove from record
     child.on('close', (code) => {
-        console.log(`[${processKey}] exited with code ${code}`);
-        delete childProcesses[processKey];
+        console.log(`[${consoleKey}] ended with code ${code}`);
+        delete childProcesses[consoleKey];
 
-        // If path references a file, read it into assets
+        // Clear the process ID
+        action.processId = undefined;
+
+        // Mark the end time
+        entry.endTime = new Date().toISOString();
+
+        // Summarize final logs as a new "think" in codeGen.history
+        const summary: ThinkAction = {
+            actionType: 'think',
+            cognition: `Process ended: PID ${entry.processId}\nCommand: ${entry.command}\nstdout:\n${entry.stdout}\nstderr:\n${entry.stderr}`,
+            description: "A summary of the completed console process",
+            reasoning: "Captured final logs from the process before removing the console entry"
+        };
+        codeGen.history.push(summary);
+
+        // Remove from consoleEntries
+        delete codeGen.details.consoleEntries![consoleKey];
+
+        // If the action references a path, read the file
         if (action.path) {
             const fullPath = path.join(projectPath, action.path.replace(/^.\//, ''));
             try {
                 const stats = fs.statSync(fullPath);
                 if (stats.isFile()) {
                     const fileContents = fs.readFileSync(fullPath, 'utf-8');
-                    codeGenPrompt.details.assets[action.path] = fileContents;
+                    codeGen.details.assets[action.path] = fileContents;
                     console.log(`Upserted asset for file: ${action.path}`);
-                } else {
-                    console.log(`Skipping read. Path is a directory or non-file: ${fullPath}`);
                 }
             } catch (err: any) {
                 console.warn(`Error reading file at "${action.path}": ${err.message}`);
@@ -237,16 +289,16 @@ function spawnProcess(
         }
     });
 
-    // On error, record the error in stderr
     child.on('error', (err) => {
-        console.error(`[${processKey}] error: ${err.message}`);
-        action.stderr += `\n[ERROR] ${err.message}`;
-        delete childProcesses[processKey];
+        console.error(`[${consoleKey}] error: ${err.message}`);
+        entry.stderr += `\n[ERROR] ${err.message}`;
+        delete childProcesses[consoleKey];
+        action.processId = undefined;
     });
 }
 
 /**
- * Creates a Request, ensures size limit, logs it, and sends to server.
+ * Builds a request, ensures size limit, logs it, sends it to the server.
  */
 function sendNextPrompt(goal: string, history: Action[], codeGen: CodeGenPrompt): void {
     roundCounter++;
@@ -256,17 +308,17 @@ function sendNextPrompt(goal: string, history: Action[], codeGen: CodeGenPrompt)
         examples: codeGen.examples,
         details: codeGen.details,
         history: history,
-        id: uuidV4(),
+        id: uuidV4()
     };
 
-    request = ensureRequestSizeLimit(request, 15000);
+    request = ensureRequestSizeLimit(request);
 
     console.log(`Round ${roundCounter}`);
     currentRoundRequest = request;
 
     roundLogs.push({
         type: "request",
-        data: JSON.parse(JSON.stringify(request)),
+        data: JSON.parse(JSON.stringify(request))
     });
     writeLogsToFile();
 
@@ -274,16 +326,15 @@ function sendNextPrompt(goal: string, history: Action[], codeGen: CodeGenPrompt)
 }
 
 /**
- * Graceful shutdown: kill child processes, close WebSocket, and exit after all processes close.
+ * Graceful shutdown. Kill child processes, close WebSocket, exit after all processes close.
  */
 function cleanup() {
-    console.log("\nGracefully shutting down...");
-
+    console.log("\nShutting down gracefully...");
     const killPromises: Promise<void>[] = [];
+
     for (const key of Object.keys(childProcesses)) {
         const child = childProcesses[key];
         console.log(`Terminating process [${key}] with SIGTERM...`);
-
         const p = new Promise<void>((resolve) => {
             child.once('close', () => {
                 console.log(`[${key}] closed.`);
@@ -296,7 +347,7 @@ function cleanup() {
 
     Promise.all(killPromises)
         .then(() => {
-            console.log("All child processes terminated. Closing application...");
+            console.log("All child processes terminated. Exiting...");
             rl.close();
             if (ws && ws.readyState === WebSocket.OPEN) {
                 ws.close();
@@ -304,41 +355,42 @@ function cleanup() {
             process.exit(0);
         })
         .catch((err) => {
-            console.error("Error closing child processes:", err);
+            console.error("Error while closing processes:", err);
             process.exit(1);
         });
 }
 
-// Handle Ctrl+C
+// Catch Ctrl+C
 process.on('SIGINT', cleanup);
 
-/**
- * Main function
- */
+// Main entry
 async function main() {
+    // Prompt user for a project name
     currentProjectName = await askQuestion("Enter your project name: ");
+    // Create the log file
     const startTime = new Date().toISOString().replace(/:/g, '-');
-    const logFileName = `${currentProjectName}-[${startTime}].log`;
-    logFilePath = path.resolve(process.cwd(), 'logs', logFileName);
-
-    // Initialize empty logs
+    logFilePath = path.resolve(process.cwd(), 'logs', `${currentProjectName}-[${startTime}].log`);
     roundLogs = [];
     fs.writeFileSync(logFilePath, JSON.stringify(roundLogs, null, 2));
     console.log(`Logging to: ${logFilePath}`);
 
+    // Make sure the project folder exists
     const projectPath = path.resolve(process.cwd(), 'projects', currentProjectName);
     if (!fs.existsSync(projectPath)) {
         fs.mkdirSync(projectPath, { recursive: true });
         console.log(`Created project directory: ${projectPath}`);
-    } else {
+    } 
+    else {
         console.log(`Project directory already exists: ${projectPath}`);
     }
 
+    // Prompt user for the goal
     const goal = await askQuestion("Enter your goal: ");
     let history: Action[] = [];
 
+    // Connect to WebSocket
     ws = new WebSocket('wss://localhost:3000', {
-        rejectUnauthorized: false,
+        rejectUnauthorized: false
     });
 
     ws.on('open', () => {
@@ -367,7 +419,8 @@ async function main() {
                     }
                     history.push(action);
                 }
-            } else {
+            } 
+            else {
                 console.error("Unexpected response format from the WebSocket.");
             }
 
@@ -384,8 +437,9 @@ async function main() {
             }
 
             sendNextPrompt(goal, history, codeGenPrompt as CodeGenPrompt);
-        } catch (err) {
-            console.error("Error processing WebSocket message:", err);
+        } 
+        catch (err) {
+            console.error("Error processing message from WebSocket:", err);
         }
     });
 

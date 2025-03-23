@@ -152,9 +152,9 @@
         "When the actionType is 'run-command' the command text will be executed in a bash shell.",
         "Use Linux bash commands to build the project, executing commands like apt install, npm install, ls, mv, rm, echo, sed, and more.",
         "Include the path to the file that the action will be performed on; files only. It should be the path of the file at the end of the action so we can reload the file.",
-        "Don't assume the command was successful, wait for the net round to see the results in the action's commandResult property.",
-        "Use the commandResult property in the history to understand what happened when the command was run. This will help you understand the state of the project.",
-        "If a command starts a process that stays open, then you must kill that process when you no longer need it."
+        "If the process is long running then there will be a consoleEntry for the processId that will be used to track the process.",
+        "Use the stdout and stderr properties on the consoleEntry to see the output of the command.",
+        "Don't assume the command was successful, wait for the net round to see what the action's, or the action's consoleEntry, stdout and stderr properties are."
     ],
     "goal": [],
     "examples": [
